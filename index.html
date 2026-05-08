@@ -93,7 +93,7 @@ nav .brand .t2{font-size:10px;font-weight:500;color:var(--text3);margin-top:1px}
 .card:hover{border-color:var(--accent);box-shadow:var(--shadow-md);transform:translateY(-1px)}
 .card:active{transform:scale(.995)} .card .n{width:26px;min-width:26px;height:26px;border-radius:8px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .card .i{flex:1;min-width:0}
-.card .i .nm{font-size:13.5px;font-weight:500;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .i .nm{font-size:13.5px;font-weight:500;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;overflow-wrap:break-word;hyphens:auto}
 .card .i .m{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap}
 .card .i .m .d{font-size:11px;color:var(--text3)}
 .card .i .m .sp{width:3px;height:3px;border-radius:50%;background:var(--text3);flex-shrink:0}
@@ -186,41 +186,77 @@ footer a{color:var(--accent);text-decoration:none}
 
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
+@media(max-width:880px){
+  .container{padding:16px 12px}
+}
 @media(max-width:640px){
-  :root{--nav-h:56px}
-  .container{padding:14px 12px}
-  .hero{padding:18px 20px}
-  .hero h1{font-size:17px}
-  .hero p{font-size:12px}
-  .hero .qs span{font-size:10px;padding:3px 10px 3px 6px}
-  nav{padding:0 14px}
+  :root{--nav-h:52px}
+  .container{padding:12px 10px}
+  .hero{padding:14px 16px}
+  .hero h1{font-size:16px}
+  .hero p{font-size:11px}
+  .hero .qs span{font-size:10px;padding:3px 8px 3px 6px}
+  nav{padding:0 12px}
   nav .brand .t2{display:none}
-  .card{padding:11px 13px}
-  .card .n{width:22px;min-width:22px;height:22px;font-size:9px}
-  .card .i .nm{font-size:12.5px}
-  .card .ab{width:60px;min-width:60px;font-size:10px;padding:5px 0}
+  .card{padding:10px 12px;gap:8px}
+  .card .n{width:20px;min-width:20px;height:20px;font-size:8px;border-radius:6px}
+  .card .i .nm{font-size:12px;word-break:break-word;-webkit-line-clamp:2}
+  .card .i .m .d{font-size:10px}
+  .card .ab{width:56px;min-width:56px;font-size:10px;padding:5px 0;border-radius:6px}
   .modal-o{padding:0;align-items:flex-end}
   .modal{max-width:100%;max-height:88vh;border-radius:var(--radius) var(--radius) 0 0;animation:ms .3s cubic-bezier(.16,1,.3,1)}
   @keyframes ms{from{transform:translateY(100%)}to{transform:translateY(0)}}
-  .mb{padding:14px 18px}
-  .mh{padding:16px 18px 0}
-  .mf{padding:0 18px 16px}
-  .ctrl-r{gap:6px}
-  .ctrl-r select,.ctrl-r .sw input{font-size:12px;padding:8px 10px}
-  .ctrl-r .sw input{padding-left:30px}
-  .ctrl-r .sw .si{font-size:12px;left:9px}
-  #sortS{width:90px}
-  #catS{width:130px}
+  .mb{padding:12px 16px}
+  .mh{padding:14px 16px 0}
+  .mh h3{font-size:14px}
+  .mf{padding:0 16px 14px}
+  .ctrl-r{flex-wrap:wrap;gap:5px}
+  .ctrl-r .sw{flex:1 1 100%;order:1;min-width:0}
+  .ctrl-r select,.ctrl-r .sw input{font-size:12px;padding:7px 8px}
+  .ctrl-r .sw input{padding-left:28px}
+  .ctrl-r .sw .si{font-size:12px;left:8px}
+  #sortS{order:2;flex:1;min-width:0;width:auto}
+  #catS{order:3;flex:1;min-width:0;width:auto}
+  .ctrl-r .btn-g{order:4;padding:7px 10px}
+  .tab{padding:8px 14px;font-size:12px}
   .lg{grid-template-columns:1fr}
-  .hc{padding:18px}
+  .hc{padding:16px}
+  .hc h3{font-size:14px}
+  .hs .hsi{padding:8px 0}
   .hs .hsi .st{font-size:12px}
+  .fl input{font-size:13px;padding:9px 11px}
+  .capw .cimg{max-height:40px}
 }
 @media(max-width:380px){
-  .ctrl-r{flex-wrap:wrap}
-  .ctrl-r .sw{flex:1 1 100%;order:1}
-  #sortS{order:2}
-  #catS{order:3}
-  .ctrl-r .btn-g{order:4}
+  :root{--nav-h:48px}
+  .container{padding:10px 8px}
+  .hero{padding:12px 12px;border-radius:14px}
+  .hero h1{font-size:15px}
+  .hero .qs{flex-direction:column;gap:3px}
+  .hero .qs span{font-size:9px}
+  nav{padding:0 10px}
+  nav .brand .icon{width:30px;height:30px;font-size:14px}
+  nav .brand .t1{font-size:14px}
+  .card{padding:8px 10px;gap:6px}
+  .card .n{width:16px;min-width:16px;height:16px;font-size:7px;border-radius:4px}
+  .card .i .nm{font-size:11px;-webkit-line-clamp:2}
+  .card .ab{width:48px;min-width:48px;font-size:9px;padding:4px 0}
+  .tab{padding:6px 10px;font-size:11px}
+  .tabs{padding:3px}
+  .ctrl-r select,.ctrl-r .sw input{font-size:11px;padding:6px 6px}
+  .ctrl-r .sw input{padding-left:24px}
+  .ctrl-r .sw .si{font-size:10px;left:7px}
+  #sortS,#catS{font-size:11px}
+  .ctrl-r .btn-g{padding:6px 8px;font-size:11px}
+  .modal{border-radius:14px 14px 0 0}
+  .mh h3{font-size:13px}
+  .mb{padding:10px 14px}
+  .mh{padding:12px 14px 0}
+  .mf{padding:0 14px 12px}
+  .mf .btn{padding:9px;font-size:12px}
+  .fl input{font-size:12px;padding:8px 10px}
+  .capw .cimg{max-height:35px}
+  .capw{padding:10px;margin:10px 0}
 }
 </style>
 </head>
