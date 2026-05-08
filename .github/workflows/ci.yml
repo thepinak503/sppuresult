@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 0 */7 * *"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check Python syntax
+        run: python3 -m py_compile server.py
+
+      - name: Smoke test server
+        run: |
+          python3 server.py &
+          SERVER_PID=$!
+          sleep 2
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ 2>/dev/null || echo "fail")
+          kill $SERVER_PID 2>/dev/null
+          [ "$HTTP_CODE" = "200" ] || { echo "Server returned $HTTP_CODE"; exit 1; }
+
+      - name: Validate HTML
+        run: |
+          python3 -c "
+          import html.parser
+          class Validator(html.parser.HTMLParser): pass
+          with open('index.html') as f:
+              Validator().feed(f.read())
+              print('HTML parsed OK')
+          "
