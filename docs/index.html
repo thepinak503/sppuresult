@@ -482,11 +482,11 @@ if(/^M\.?\s*B\.?\s*A/i.test(n)||/\bMBA\b/.test(nu)||/MASTER\s+OF\s+BUSINESS\s+AD
 if(/^M\.?(?:CA|CS)\b/i.test(n)||/MASTER\s+OF\s+COMPUTER\s+(?:APPLICATION|APPLICATIONS)/i.test(nu))return'mca';
 if(/^M\.?\s*(?:PHARM|ARCH|ED|E\.?)\b/i.test(n)||/^MASTER\s+OF\s+(?:LIBRARY|EDUCATION|HOSPITAL|PHARMACY|ARCHITECTURE|ENGINEERING)/i.test(nu))return'other-pg';
 if(/^M\.?\s*SC\b/i.test(n))return'msc';
-if(/^MA\s*\/\s*M\.?\s*SC/i.test(n))return'msc';
+if(/^M\.?\s*A\.?\s*\/\s*M\.?\s*SC/i.test(n))return'msc';
 if(/^M\.?\s*(?:A|COM)\b/i.test(n)||/^MASTER\s+OF\s+(?:COMMERCE|ARTS)/i.test(nu))return'ma-mcom';
 if(/^MASTER\s+OF\b/i.test(n)||/^MASTERS?\s+IN\b/i.test(n))return'other-pg';
 if(/^LL[BMD]\b/i.test(name)||/^B\.?\s*A\.?\s*LL/i.test(name))return'law';
-if(/^LL[BMD]\b/i.test(n)||/^B\.?\s*A\.?\s*LL/i.test(n))return'law';
+if(/^LL[BMD]\b/i.test(n)||/^B\.?\s*A\.?\s*LL/i.test(n)||/^B\.?\s*B\.?\s*A\.?\s*LL/i.test(n))return'law';
 if(/(?:FIFTH|SECOND|THIRD|FOURTH)\s+(?:\(FINAL\)\s+)?YEAR\s+(?:OF\s+)?(?:THREE\s+YEAR\s+)?(?:LAW|B\.?\s*A\.?\s*LL)/i.test(name))return'law';
 if(/^DIPLOMA\b/i.test(name)||/^POST\s+GRADUATE\s+DIPLOMA/i.test(name)||/^PGDCM/i.test(name))return'diploma';
 if(/^POST\s+GRADUATE\s+/i.test(name))return'diploma';
@@ -552,9 +552,8 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')cM()});
 $('capR').addEventListener('click',function(e){e.preventDefault();lCap()});
 $('rF').addEventListener('submit',function(e){const s=$('fSN').value.trim(),m=$('fMN').value.trim(),c=$('fCT').value.trim(),o=$('fOC').value;if(!s){tS('Enter seat number','err');e.preventDefault();return}if(!m){tS('Enter mother\'s name','err');e.preventDefault();return}if(c.length!==5){tS('Captcha must be 5 characters','err');e.preventDefault();return}if(!o){tS('Refresh captcha','err');e.preventDefault();return}tS('Fetching result...','inf')});
 const lc=$('lc');const gp={};LK.forEach(l=>{if(!gp[l.c])gp[l.c]=[];gp[l.c].push(l)});let lh='';Object.entries(gp).forEach(([cat,links])=>{lh+=`<div class="ctt">${es(cat)}</div><div class="lg">`;links.forEach(l=>{lh+=`<a class="lc" href="${es(l.u)}" target="_blank" rel="noopener"><div class="ct">${es(l.c)}</div><div class="tt">${es(l.t)}</div>${l.d?`<div class="dc">${es(l.d)}</div>`:''}</a>`});lh+='</div>'});lc.innerHTML=lh;
-try{let r=await fetch(A+'/api/sessions',{signal:AbortSignal.timeout(10000)});if(r.ok){let d=await r.json();const sel=$('sessS');sel.innerHTML='<option value="">All Sessions</option>';if(Array.isArray(d))d.forEach(s=>{if(s.Exam_Period&&s.Exam_Name){const o=document.createElement('option');o.value=s.Exam_Period;o.textContent=s.Exam_Name;sel.appendChild(o)}})}else throw new Error('Not OK')}catch(ex){if(typeof navigator!=='undefined'&&!navigator.onLine){so();return}try{if(ES&&ES.length){const sel=$('sessS');sel.innerHTML='<option value="">All Sessions</option>';ES.forEach(s=>{if(s[1]){const o=document.createElement('option');o.value=s[1];o.textContent=s[0];sel.appendChild(o)}});EP=true}}catch(e2){}console.warn('Sessions:',ex.message)}
 if(typeof navigator!=='undefined'&&!navigator.onLine){so();return}
-await lC('')}
+await Promise.all([(async()=>{try{let r=await fetch(A+'/api/sessions',{signal:AbortSignal.timeout(10000)});if(r.ok){let d=await r.json();const sel=$('sessS');sel.innerHTML='<option value="">All Sessions</option>';if(Array.isArray(d))d.forEach(s=>{if(s.Exam_Period&&s.Exam_Name){const o=document.createElement('option');o.value=s.Exam_Period;o.textContent=s.Exam_Name;sel.appendChild(o)}})}else throw new Error('Not OK')}catch(ex){try{if(ES&&ES.length){const sel=$('sessS');sel.innerHTML='<option value="">All Sessions</option>';ES.forEach(s=>{if(s[1]){const o=document.createElement('option');o.value=s[1];o.textContent=s[0];sel.appendChild(o)}});EP=true}}catch(e2){}console.warn('Sessions:',ex.message)}})(),lC('')])}
 // Revaluation
 let rvC=[],rvFC=[],rvSB='default',rvSQ='';
 const rvSK=n=>{let h='';for(let i=0;i<(n||8);i++)h+=`<div class="sk"><div class="skn"></div><div class="skb"><div class="skl"></div><div class="skl"></div></div><div class="skb2"></div></div>`;return h};

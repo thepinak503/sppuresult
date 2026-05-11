@@ -70,7 +70,6 @@ async function handleRequest(request) {
       const r = await fetch(`${REVAL}/revalresult/`, { headers: rh() });
       saveRevalCookie(r);
       const html = await r.text();
-      // Extract course + event_target from grid
       const courses = [];
       const gridMatch = html.match(/<table[^>]*id="grdColleges"[^>]*>(.*?)<\/table>/s);
       if (gridMatch) {
@@ -82,8 +81,45 @@ async function handleRequest(request) {
           const course = cells[0].replace(/<[^>]+>/g, '').trim();
           const subject = cells[1].replace(/<[^>]+>/g, '').trim();
           const etMatch = cells[2].match(/__doPostBack\(&#39;([^&#]+?)&#39;/);
+          courses.push({ course, subject, event_target: etMatch ? etMatch[1] : '' });
+        }
+      }
+      // Paginate through remaining pages
+      let vs = (html.match(/__VIEWSTATE[^>]*value="([^"]*)"/) || [])[1] || '';
+      let ev = (html.match(/__EVENTVALIDATION[^>]*value="([^"]*)"/) || [])[1] || '';
+      let vsg = (html.match(/__VIEWSTATEGENERATOR[^>]*value="([^"]*)"/) || [])[1] || '';
+      const pages = [...html.matchAll(/__doPostBack\(.*?grdColleges.*?Page\$(\d+)/g)].map(m => parseInt(m[1]));
+      const maxPage = pages.length ? Math.max(...pages) : 1;
+      for (let p = 2; p <= maxPage; p++) {
+        const fd = new URLSearchParams();
+        fd.set('__VIEWSTATE', vs);
+        fd.set('__EVENTVALIDATION', ev);
+        fd.set('__VIEWSTATEGENERATOR', vsg);
+        fd.set('__EVENTTARGET', 'grdColleges');
+        fd.set('__EVENTARGUMENT', `Page$${p}`);
+        const pr = await fetch(`${REVAL}/revalresult/`, { method: 'POST', headers: { ...rh(), 'Content-Type': 'application/x-www-form-urlencoded' }, body: fd.toString() });
+        saveRevalCookie(pr);
+        const ph = await pr.text();
+        vs = (ph.match(/__VIEWSTATE[^>]*value="([^"]*)"/) || [])[1] || '';
+        ev = (ph.match(/__EVENTVALIDATION[^>]*value="([^"]*)"/) || [])[1] || '';
+        vsg = (ph.match(/__VIEWSTATEGENERATOR[^>]*value="([^"]*)"/) || [])[1] || '';
+        const pg = ph.match(/<table[^>]*id="grdColleges"[^>]*>(.*?)<\/table>/s);
+        if (pg) {
+          const prs = pg[1].match(/<tr[^>]*>(.*?)<\/tr>/gs) || [];
+          for (const row of prs) {
+            if (/HeaderStyle|PagerStyle|FooterStyle/.test(row)) continue;
+            const cells = row.match(/<td[^>]*>(.*?)<\/td>/gs) || [];
+            if (cells.length < 3) continue;
+            const course = cells[0].replace(/<[^>]+>/g, '').trim();
+            const subject = cells[1].replace(/<[^>]+>/g, '').trim();
+            const etMatch = cells[2].match(/__doPostBack\(&#39;([^&#]+?)&#39;/);
+            courses.push({ course, subject, event_target: etMatch ? etMatch[1] : '' });
+          }
+        }
+      }
+      return jsonResponse(courses, cors);
+    }
 
-          
     if (path === '/api/reval/view') {
       const fd = await request.formData();
       const et = fd.get('event_target') || '';
