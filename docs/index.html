@@ -300,6 +300,7 @@ footer a{color:var(--accent);text-decoration:none}
 
 <div class="tabs">
   <button class="tab a" data-tab="r">&#128202; Results <span class="b" id="cBadge">0</span></button>
+  <button class="tab" data-tab="v">&#128260; Revaluation</button>
   <button class="tab" data-tab="l">&#128279; Links</button>
   <button class="tab" data-tab="a">&#9432; Help</button>
 </div>
@@ -326,6 +327,24 @@ footer a{color:var(--accent);text-decoration:none}
     </div>
   </div>
   <div id="ca"></div>
+</div>
+
+<div class="panel" id="p-v">
+  <div class="ctrl">
+    <div class="ctrl-r">
+      <div class="sw">
+        <span class="si">&#128270;</span>
+        <input type="text" id="rvSrch" placeholder="Search courses..." autocomplete="off">
+      </div>
+      <select id="rvSortS">
+        <option value="default">Default</option>
+        <option value="name-asc">A-Z</option>
+        <option value="name-desc">Z-A</option>
+      </select>
+      <button class="btn btn-g" id="rvRef">&#8635;</button>
+    </div>
+  </div>
+  <div id="rvCa"></div>
 </div>
 
 <div class="panel" id="p-l">
@@ -386,6 +405,36 @@ footer a{color:var(--accent);text-decoration:none}
       <div class="mf">
         <button type="button" class="btn btn-g" id="canB">Cancel</button>
         <button type="submit" class="btn btn-p" id="subB">&#128196; Check Result</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-o" id="rvMo">
+  <div class="modal">
+    <div class="mh">
+      <h3>Revaluation Result <span class="sub" id="rvCN"></span></h3>
+      <button class="mc" id="rvMX">&times;</button>
+    </div>
+    <form id="rvF">
+      <div class="mb">
+        <input type="hidden" id="rvET" value="">
+        <div class="fl">
+          <label>Search By</label>
+          <select id="rvSB" style="width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:var(--radius-xs);background:var(--bg);color:var(--text);outline:none">
+            <option value="Seat No">Seat Number</option>
+            <option value="PRN No">PRN Number</option>
+          </select>
+        </div>
+        <div class="fl">
+          <label>Enter Value <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="rvSV" placeholder="Enter seat or PRN number" required autocomplete="off">
+        </div>
+        <div id="rvRes" style="display:none;margin-top:12px;padding:12px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);max-height:400px;overflow:auto;font-size:12px;color:var(--text);line-height:1.6"></div>
+      </div>
+      <div class="mf">
+        <button type="button" class="btn btn-g" id="rvCanB">Cancel</button>
+        <button type="submit" class="btn btn-p" id="rvSubB">&#128269; Search</button>
       </div>
     </form>
   </div>
@@ -506,11 +555,28 @@ const lc=$('lc');const gp={};LK.forEach(l=>{if(!gp[l.c])gp[l.c]=[];gp[l.c].push(
 try{let r=await fetch(A+'/api/sessions',{signal:AbortSignal.timeout(10000)});if(r.ok){let d=await r.json();const sel=$('sessS');sel.innerHTML='<option value="">All Sessions</option>';if(Array.isArray(d))d.forEach(s=>{if(s.Exam_Period&&s.Exam_Name){const o=document.createElement('option');o.value=s.Exam_Period;o.textContent=s.Exam_Name;sel.appendChild(o)}})}else throw new Error('Not OK')}catch(ex){if(typeof navigator!=='undefined'&&!navigator.onLine){so();return}try{if(ES&&ES.length){const sel=$('sessS');sel.innerHTML='<option value="">All Sessions</option>';ES.forEach(s=>{if(s[1]){const o=document.createElement('option');o.value=s[1];o.textContent=s[0];sel.appendChild(o)}});EP=true}}catch(e2){}console.warn('Sessions:',ex.message)}
 if(typeof navigator!=='undefined'&&!navigator.onLine){so();return}
 await lC('')}
+// Revaluation
+let rvC=[],rvFC=[],rvSB='default',rvSQ='';
+const rvSK=n=>{let h='';for(let i=0;i<(n||8);i++)h+=`<div class="sk"><div class="skn"></div><div class="skb"><div class="skl"></div><div class="skl"></div></div><div class="skb2"></div></div>`;return h};
+function rvRC(){const q=rvSQ.toLowerCase();let l=rvC;if(q)l=l.filter(c=>c.course.toLowerCase().includes(q)||c.subject.toLowerCase().includes(q));const s=rvSB;if(s!=='default'){l=[...l];l.sort((a,b)=>s==='name-asc'?a.course.localeCompare(b.course):b.course.localeCompare(a.course))}rvFC=l;const el=$('rvCa');if(!l.length){el.innerHTML=rvC.length?'<div class="empty"><div class="ei">&#128270;</div><h3>No matches</h3></div>':'<div class="empty"><div class="ei">&#128260;</div><h3>No revaluation courses</h3></div>';return}let h='<div class="cl">';l.forEach((c,i)=>{const sub=c.subject.length>80?c.subject.slice(0,80)+'...':c.subject;h+=`<div class="card" data-et="${es(c.event_target)}" data-cn="${es(c.course)}"><div class="n" style="background:var(--accent-bg);color:var(--accent)">${i+1}</div><div class="i"><div class="nm">${es(c.course)}</div><div class="m"><span class="d">${es(sub)}</span></div></div><button class="ab rvv">View</button></div>`});h+='</div>';el.innerHTML=h;el.querySelectorAll('.rvv').forEach(b=>{b.addEventListener('click',function(e){e.stopPropagation();const cd=this.closest('.card');rvOM(cd.dataset.et,cd.dataset.cn)})});el.querySelectorAll('.card').forEach(cd=>{cd.addEventListener('click',function(){if(event.target.closest('.rvv'))return;rvOM(this.dataset.et,this.dataset.cn)})})}
+function rvFilter(){rvSQ=$('rvSrch').value;rvRC()}
+async function rvLC(){const el=$('rvCa');el.innerHTML=rvSK(10);try{let r=await fetch(A+'/api/reval/courses',{signal:AbortSignal.timeout(60000)});if(!r.ok)throw new Error('HTTP '+r.status);let d=await r.json();if(!Array.isArray(d)||!d.length){el.innerHTML='<div class="empty"><div class="ei">&#128260;</div><h3>No revaluation courses</h3><p>Try again later.</p></div>';return}rvC=d;rvSQ='';rvSB='default';$('rvSrch').value='';rvRC()}catch(ex){el.innerHTML='<div class="empty"><div class="ei">&#9888;</div><h3>Failed to load</h3><p>'+es(ex.message)+'</p><button class="btn btn-p" onclick="rvLC()" style="margin-top:12px;padding:9px 20px;border:none;border-radius:8px;font-size:12px;font-weight:600;background:var(--accent);color:#fff;cursor:pointer">Retry</button></div>'}}
+async function rvOM(et,cn){if(!et){tS('Invalid course data','err');return}$('rvCN').textContent=cn||'';$('rvET').value=et;$('rvSV').value='';$('rvRes').style.display='none';$('rvRes').innerHTML='';$('rvMo').classList.add('a');document.body.style.overflow='hidden'}
+function rvCM(){$('rvMo').classList.remove('a');document.body.style.overflow=''}
+async function rvSearch(e){e.preventDefault();const et=$('rvET').value,sb=$('rvSB').value,sv=$('rvSV').value.trim();if(!sv){tS('Enter a search value','err');return}const s=$('rvSubB');s.disabled=true;s.textContent='Searching...';$('rvRes').style.display='none';try{const vr=await fetch(A+'/api/reval/view',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'event_target='+encodeURIComponent(et),signal:AbortSignal.timeout(30000)});const vd=await vr.json();if(vd.error){tS('Failed: '+vd.error,'err');s.disabled=false;s.textContent='Search';return}const rr=await fetch(A+'/api/reval/result',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'vs='+encodeURIComponent(vd.vs)+'&ev='+encodeURIComponent(vd.ev)+'&vsg='+encodeURIComponent(vd.vsg)+'&exam_val='+encodeURIComponent(vd.exam_val)+'&search_by='+encodeURIComponent(sb)+'&search_value='+encodeURIComponent(sv),signal:AbortSignal.timeout(30000)});const rd=await rr.json();let html=rd.html||rd.full||'';if(html.length<100){tS('No result found','inf');$('rvRes').innerHTML='<p style="color:var(--text2)">No result found for this search. Try a different value.</p>';$('rvRes').style.display='block';s.disabled=false;s.textContent='Search';return}$('rvRes').innerHTML=html;$('rvRes').style.display='block';tS('Result loaded','suc')}catch(ex){tS('Search failed','err');$('rvRes').innerHTML='<p style="color:var(--danger)">Error: '+es(ex.message)+'</p>';$('rvRes').style.display='block'}s.disabled=false;s.textContent='Search'}
+$('rvSrch').addEventListener('input',rvFilter);
+$('rvSortS').addEventListener('change',function(){rvSB=this.value;rvRC()});
+$('rvRef').addEventListener('click',rvLC);
+$('rvMX').addEventListener('click',rvCM);
+$('rvCanB').addEventListener('click',rvCM);
+$('rvMo').addEventListener('click',function(e){if(e.target===this)rvCM()});
+$('rvF').addEventListener('submit',rvSearch);
+document.addEventListener('keydown',function(e){if(e.key==='Escape')rvCM()});
 init();
 })();
 </script>
 <footer>
-  <p>SPPU Thanks &middot; Not affiliated with Savitribai Phule Pune University</p>
+  <p>Not affiliated with Savitribai Phule Pune University</p>
 </footer>
 </body>
 </html>

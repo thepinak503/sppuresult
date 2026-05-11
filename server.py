@@ -12,13 +12,117 @@ import ssl
 import os
 import sys
 import traceback
+import re
+from http.cookiejar import CookieJar
 
 SPPU_BASE = "https://onlineresults.unipune.ac.in"
+REVAL_BASE = "https://pun.unipune.ac.in"
 PORT = int(os.environ.get("PORT", 8080))
 
 ssl_ctx = ssl.create_default_context()
 ssl_ctx.check_hostname = False
 ssl_ctx.verify_mode = ssl.CERT_NONE
+
+class RevalScraper:
+    def __init__(self):
+        self.cj = CookieJar()
+        self.opener = None
+        self._make_opener()
+
+    def _make_opener(self):
+        self.opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(self.cj)
+        )
+
+    def _fetch(self, path, data=None):
+        url = f"{REVAL_BASE}{path}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": f"{REVAL_BASE}/revalresult/",
+        }
+        if data:
+            headers["Content-Type"] = "application/x-www-form-urlencoded"
+            body = urllib.parse.urlencode(data).encode()
+            req = urllib.request.Request(url, data=body, headers=headers, method="POST")
+        else:
+            req = urllib.request.Request(url, headers=headers)
+        try:
+            resp = self.opener.open(req, timeout=20)
+            return resp.read().decode("utf-8", errors="replace")
+        except urllib.error.HTTPError as e:
+            return e.read().decode("utf-8", errors="replace")
+
+    def _extract_vs(self, html):
+        vs = re.search(r'__VIEWSTATE[^>]*value="([^"]*)"', html)
+        ev = re.search(r'__EVENTVALIDATION[^>]*value="([^"]*)"', html)
+        vsg = re.search(r'__VIEWSTATEGENERATOR[^>]*value="([^"]*)"', html)
+        return (vs.group(1) if vs else "",
+                ev.group(1) if ev else "",
+                vsg.group(1) if vsg else "")
+
+    def _extract_courses(self, html):
+        courses = []
+        m = re.search(r'<table[^>]*id="grdColleges"[^>]*>(.*?)</table>', html, re.DOTALL)
+        if not m: return courses
+        rows = re.findall(r'<tr[^>]*>(.*?)</tr>', m.group(1), re.DOTALL)
+        for row in rows:
+            if 'HeaderStyle' in row or 'PagerStyle' in row or 'FooterStyle' in row:
+                continue
+            cells = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL)
+            if len(cells) < 3: continue
+            course = re.sub(r'<[^>]+>', '', cells[0]).strip()
+            subject = re.sub(r'<[^>]+>', '', cells[1]).strip()
+            evt_m = re.search(r"__doPostBack\((?:&#39;|\"|')([^'\"&]+?)(?:&#39;|\"|')", cells[2])
+            event_target = evt_m.group(1) if evt_m else ""
+            courses.append({"course": course, "subject": subject, "event_target": event_target})
+        return courses
+
+    def scrape_courses(self):
+        self._make_opener()
+        html = self._fetch("/revalresult/")
+        vs, ev, vsg = self._extract_vs(html)
+        all_courses = self._extract_courses(html)
+        pages = re.findall(r"__doPostBack\(.*?grdColleges.*?Page\$(\d+)", html)
+        max_page = max(int(p) for p in pages) if pages else 1
+        for page in range(2, max_page + 1):
+            form = {"__VIEWSTATE": vs, "__EVENTVALIDATION": ev,
+                    "__VIEWSTATEGENERATOR": vsg, "__EVENTTARGET": "grdColleges",
+                    "__EVENTARGUMENT": f"Page${page}"}
+            h = self._fetch("/revalresult/", form)
+            vs, ev, vsg = self._extract_vs(h)
+            all_courses.extend(self._extract_courses(h))
+        return all_courses
+
+    def view_result_form(self, event_target):
+        self._make_opener()
+        html = self._fetch("/revalresult/")
+        vs, ev, vsg = self._extract_vs(html)
+        form = {"__VIEWSTATE": vs, "__EVENTVALIDATION": ev,
+                "__VIEWSTATEGENERATOR": vsg, "__EVENTTARGET": event_target,
+                "__EVENTARGUMENT": ""}
+        h = self._fetch("/revalresult/", form)
+        vs, ev, vsg = self._extract_vs(h)
+        exam_m = re.search(r'id="cboExamName"[^>]*>.*?<option[^>]*selected[^>]*value="([^"]*)"', h, re.DOTALL)
+        exam_val = exam_m.group(1) if exam_m else ""
+        exam_name = re.sub(r'<[^>]+>', '', re.search(r'id="cboExamName"[^>]*>.*?</select>', h, re.DOTALL).group(0) if re.search(r'id="cboExamName"[^>]*>.*?</select>', h, re.DOTALL) else "")
+        return {"vs": vs, "ev": ev, "vsg": vsg, "exam_val": exam_val}
+
+    def search_result(self, vs, ev, vsg, exam_val, search_by, search_value):
+        form = {
+            "__VIEWSTATE": vs, "__EVENTVALIDATION": ev,
+            "__VIEWSTATEGENERATOR": vsg, "__EVENTTARGET": "", "__EVENTARGUMENT": "",
+            "cboExamName": exam_val, "cboSearchBy": search_by,
+            "txtSearch": search_value, "btnShow": "Submit",
+        }
+        h = self._fetch("/revalresult/", form)
+        body = re.search(r'<body[^>]*>(.*)</body>', h, re.DOTALL)
+        if body:
+            inner = re.sub(r'<script[^>]*>.*?</script>|<style[^>]*>.*?</style>', '', body.group(1), flags=re.DOTALL)
+            inner = inner.strip()
+            if len(inner) > 100:
+                return {"html": inner, "full": h}
+        return {"html": h, "full": h}
+
 
 class SPPUSession:
     def __init__(self):
@@ -121,6 +225,7 @@ class SPPUSession:
 
 
 sppu = SPPUSession()
+reval = RevalScraper()
 STATIC_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -169,6 +274,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 result = sppu.post_json("/Result/Dashboard/VALCHCT", {"ctxt": ctxt, "hct": hct})
                 self._send_json(result)
 
+            elif path == "/api/reval/courses":
+                data = reval.scrape_courses()
+                self._send_json(data)
+
             elif path in ("/", "/index.html"):
                 self.path = "/index.html"
                 super().do_GET()
@@ -190,7 +299,20 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             body = self.rfile.read(length).decode("utf-8", errors="replace") if length > 0 else ""
             post_data = dict(urllib.parse.parse_qsl(body))
 
-            if path == "/api/result":
+            if path == "/api/reval/view":
+                event_target = post_data.get("event_target", "")
+                result = reval.view_result_form(event_target)
+                self._send_json(result)
+
+            elif path == "/api/reval/result":
+                result = reval.search_result(
+                    post_data.get("vs", ""), post_data.get("ev", ""),
+                    post_data.get("vsg", ""), post_data.get("exam_val", ""),
+                    post_data.get("search_by", "Seat No"), post_data.get("search_value", ""),
+                )
+                self._send_json(result)
+
+            elif path == "/api/result":
                 pdf_bytes, ct = sppu.post_binary("/SPPU ONLINE RESULT DISPLAY", post_data)
                 self.send_response(200)
                 self.send_header("Content-Type", ct)
