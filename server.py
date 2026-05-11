@@ -72,7 +72,7 @@ class RevalScraper:
             if len(cells) < 3: continue
             course = re.sub(r'<[^>]+>', '', cells[0]).strip()
             subject = re.sub(r'<[^>]+>', '', cells[1]).strip()
-            evt_m = re.search(r"__doPostBack\((?:&#39;|\"|')([^'\"&]+?)(?:&#39;|\"|')", cells[2])
+            evt_m = re.search(r"__doPostBack\(&#39;([^&#]+?)&#39;", cells[2])
             event_target = evt_m.group(1) if evt_m else ""
             courses.append({"course": course, "subject": subject, "event_target": event_target})
         return courses

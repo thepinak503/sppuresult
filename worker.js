@@ -81,47 +81,9 @@ async function handleRequest(request) {
           if (cells.length < 3) continue;
           const course = cells[0].replace(/<[^>]+>/g, '').trim();
           const subject = cells[1].replace(/<[^>]+>/g, '').trim();
-          const etMatch = cells[2].match(/__doPostBack\([^']*['"]([^'"]+?)['"]/);
-          const event_target = etMatch ? etMatch[1] : '';
-          courses.push({ course, subject, event_target });
-        }
-      }
-      // Handle pagination
-      const pages = [...html.matchAll(/__doPostBack\(.*?grdColleges.*?Page\$(\d+)/g)].map(m => parseInt(m[1]));
-      const maxPage = Math.max(...pages, 1);
-      for (let p = 2; p <= maxPage; p++) {
-        const formData = new URLSearchParams();
-        const vsMatch = html.match(/__VIEWSTATE[^>]*value="([^"]*)"/);
-        const evMatch = html.match(/__EVENTVALIDATION[^>]*value="([^"]*)"/);
-        const vsgMatch = html.match(/__VIEWSTATEGENERATOR[^>]*value="([^"]*)"/);
-        if (!vsMatch) break;
-        formData.set('__VIEWSTATE', vsMatch[1]);
-        formData.set('__EVENTVALIDATION', evMatch ? evMatch[1] : '');
-        formData.set('__VIEWSTATEGENERATOR', vsgMatch ? vsgMatch[1] : '');
-        formData.set('__EVENTTARGET', 'grdColleges');
-        formData.set('__EVENTARGUMENT', `Page$${p}`);
-        const r2 = await fetch(`${REVAL}/revalresult/`, { method: 'POST', headers: { ...rh(), 'Content-Type': 'application/x-www-form-urlencoded' }, body: formData.toString() });
-        saveRevalCookie(r2);
-        const html2 = await r2.text();
-        html = html2;
-        const gridMatch2 = html2.match(/<table[^>]*id="grdColleges"[^>]*>(.*?)<\/table>/s);
-        if (gridMatch2) {
-          const rows2 = gridMatch2[1].match(/<tr[^>]*>(.*?)<\/tr>/gs) || [];
-          for (const row of rows2) {
-            if (/HeaderStyle|PagerStyle|FooterStyle/.test(row)) continue;
-            const cells = row.match(/<td[^>]*>(.*?)<\/td>/gs) || [];
-            if (cells.length < 3) continue;
-            const course = cells[0].replace(/<[^>]+>/g, '').trim();
-            const subject = cells[1].replace(/<[^>]+>/g, '').trim();
-            const etMatch = cells[2].match(/__doPostBack\([^']*['"]([^'"]+?)['"]/);
-            const event_target = etMatch ? etMatch[1] : '';
-            courses.push({ course, subject, event_target });
-          }
-        }
-      }
-      return jsonResponse(courses, cors);
-    }
+          const etMatch = cells[2].match(/__doPostBack\(&#39;([^&#]+?)&#39;/);
 
+          
     if (path === '/api/reval/view') {
       const fd = await request.formData();
       const et = fd.get('event_target') || '';

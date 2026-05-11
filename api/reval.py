@@ -44,7 +44,7 @@ def _courses(html):
         if len(cells) < 3: continue
         course = re.sub(r'<[^>]+>', "", cells[0]).strip()
         subject = re.sub(r'<[^>]+>', "", cells[1]).strip()
-        etm = re.search(r"__doPostBack\(['\"]*([^'\"]+?)['\"]*", cells[2])
+        etm = re.search(r"__doPostBack\(&#39;([^&#]+?)&#39;", cells[2])
         courses.append({"course": course, "subject": subject, "event_target": etm.group(1) if etm else ""})
     return courses
 
