@@ -1,4 +1,19 @@
 <!DOCTYPE html>
+<!--
+╔══════════════════════════════════════════════════════════════════╗
+║  SPPU Result Viewer                                             ║
+║  Community tool for Savitribai Phule Pune University results.   ║
+║  Fetches live exam data from the official SPPU portal.          ║
+║                                                                ║
+║  DISCLAIMER:                                                    ║
+║  NOT affiliated with or endorsed by SPPU. All results shown     ║
+║  are provisional — verify with official university marksheet.   ║
+║  No personal data is stored or sent to third parties.           ║
+║  Use at your own risk.                                          ║
+║                                                                ║
+║  https://github.com/anomalyco/sppuresult                        ║
+╚══════════════════════════════════════════════════════════════════╝
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -25,7 +40,7 @@ nav .brand .t2{font-size:10px;font-weight:500;color:var(--text3);margin-top:1px}
 .container{max-width:880px;margin:0 auto;padding:20px 16px 32px;flex:1;width:100%}
 
 /* Hero */
-.hero{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:24px 28px;margin-bottom:16px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.hero{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:24px 28px;margin-bottom:16px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:var(--shadow);position:relative;overflow:hidden;will-change:transform;transform:translateZ(0)}
 .hero::after{content:'';position:absolute;inset:0;border-radius:var(--radius);background:linear-gradient(135deg,transparent 40%,rgba(37,99,235,.03) 100%);pointer-events:none}
 .hero h1{font-size:20px;font-weight:700;letter-spacing:-.03em;position:relative}
 .hero p{font-size:13px;color:var(--text2);margin-top:4px;line-height:1.5;position:relative}
@@ -64,8 +79,8 @@ nav .brand .t2{font-size:10px;font-weight:500;color:var(--text3);margin-top:1px}
 .tab .b{display:inline-block;margin-left:5px;padding:0 7px;border-radius:8px;font-size:9px;font-weight:700;background:var(--bg);color:var(--text3);line-height:1.6}
 .tab.a .b{background:rgba(255,255,255,.18);color:#fff}
 
-.panel{display:none;animation:fi .25s ease}
-.panel.a{display:block}
+.panel{display:none;animation:fi .25s ease;contain:layout style paint}
+.panel.a{display:block;content-visibility:auto;contain-intrinsic-size:400px}
 @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
 /* Controls */
@@ -87,11 +102,11 @@ nav .brand .t2{font-size:10px;font-weight:500;color:var(--text3);margin-top:1px}
 #catS{flex:0 0 auto;width:150px}
 
 /* Cards */
-.cl{animation:fi .2s ease}
-.card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:13px 15px;margin-bottom:7px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .18s;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:var(--shadow)}
+.cl{animation:fi .2s ease;contain:layout style paint;content-visibility:auto;contain-intrinsic-size:60px}
+.card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:13px 15px;margin-bottom:7px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .18s;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:var(--shadow);will-change:transform;transform:translateZ(0)}
 .card:last-child{margin-bottom:0}
 .card:hover{border-color:var(--accent);box-shadow:var(--shadow-md);transform:translateY(-1px)}
-.card:active{transform:scale(.995)} .card .n{width:26px;min-width:26px;height:26px;border-radius:8px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.card:active{transform:scale(.995)}.card .n{width:26px;min-width:26px;height:26px;border-radius:8px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .card .i{flex:1;min-width:0}
 .card .i .nm{font-size:13.5px;font-weight:500;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;overflow-wrap:break-word;hyphens:auto}
 .card .i .m{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap}
@@ -99,7 +114,7 @@ nav .brand .t2{font-size:10px;font-weight:500;color:var(--text3);margin-top:1px}
 .card .i .m .sp{width:3px;height:3px;border-radius:50%;background:var(--text3);flex-shrink:0}
 .card .i .m .yt{display:inline-flex;padding:1px 7px;border-radius:5px;font-size:9px;font-weight:700;line-height:1.5;letter-spacing:.02em}
 .card .i .m .new{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:5px;font-size:9px;font-weight:700;background:var(--te-bg);color:var(--te)}
-.card .i .m .new::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--te);animation:pl 2s infinite}
+.card .i .m .new::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--te);animation:pl 2s infinite;will-change:opacity}
 @keyframes pl{0%,100%{opacity:1}50%{opacity:.3}}
 .card .ab{width:68px;min-width:68px;padding:6px 0;border:none;border-radius:var(--radius-xs);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;background:var(--accent);color:#fff;box-shadow:0 1px 4px rgba(37,99,235,.12)}
 .card .ab:hover{box-shadow:0 3px 10px rgba(37,99,235 .22);transform:translateY(-1px)}
@@ -107,11 +122,11 @@ nav .brand .t2{font-size:10px;font-weight:500;color:var(--text3);margin-top:1px}
 
 /* Skeleton */
 .sk{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:13px 15px;margin-bottom:7px;display:flex;align-items:center;gap:11px;pointer-events:none}
-.sk .skn{width:26px;height:26px;border-radius:8px;background:var(--border);flex-shrink:0;animation:sh 1.5s infinite}
+.sk .skn{width:26px;height:26px;border-radius:8px;background:var(--border);flex-shrink:0;animation:sh 1.5s infinite;will-change:opacity}
 .sk .skb{flex:1}
-.sk .skl{height:12px;border-radius:4px;background:var(--border);margin-bottom:5px;animation:sh 1.5s infinite}
+.sk .skl{height:12px;border-radius:4px;background:var(--border);margin-bottom:5px;animation:sh 1.5s infinite;will-change:opacity}
 .sk .skl:last-child{width:55%;margin-bottom:0}
-.sk .skb2{width:68px;height:28px;border-radius:var(--radius-xs);background:var(--border);flex-shrink:0;animation:sh 1.5s infinite}
+.sk .skb2{width:68px;height:28px;border-radius:var(--radius-xs);background:var(--border);flex-shrink:0;animation:sh 1.5s infinite;will-change:opacity}
 @keyframes sh{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}
 
 .empty{text-align:center;padding:48px 20px}
@@ -120,9 +135,9 @@ nav .brand .t2{font-size:10px;font-weight:500;color:var(--text3);margin-top:1px}
 .empty p{font-size:13px;color:var(--text2);margin-bottom:16px;max-width:320px;margin-left:auto;margin-right:auto}
 
 /* Modal */
-.modal-o{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center;padding:16px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.modal-o{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center;padding:16px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);will-change:opacity}
 .modal-o.a{display:flex}
-.modal{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:mp .3s cubic-bezier(.16,1,.3,1)}
+.modal{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:mp .3s cubic-bezier(.16,1,.3,1);will-change:transform,opacity}
 @keyframes mp{from{transform:translateY(20px) scale(.97);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
 .mh{padding:20px 22px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .mh h3{font-size:15px;line-height:1.4;flex:1;font-weight:600}
@@ -175,7 +190,7 @@ nav .brand .t2{font-size:10px;font-weight:500;color:var(--text3);margin-top:1px}
 .hs .hsi .st strong{color:var(--text)}
 
 /* Toast */
-.ts{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--card);color:var(--text);padding:11px 20px;border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);z-index:400;transition:all .35s cubic-bezier(.16,1,.3,1);font-size:13px;max-width:90%;border:1px solid var(--border);pointer-events:none;display:flex;align-items:center;gap:8px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.ts{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--card);color:var(--text);padding:11px 20px;border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);z-index:400;transition:all .35s cubic-bezier(.16,1,.3,1);font-size:13px;max-width:90%;border:1px solid var(--border);pointer-events:none;display:flex;align-items:center;gap:8px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);will-change:transform}
 .ts.s{transform:translateX(-50%) translateY(0);pointer-events:auto}
 .ts .ti{font-size:15px;flex-shrink:0}
 .ts.suc{border-left:3px solid var(--success)}
@@ -407,7 +422,7 @@ footer a{color:var(--accent);text-decoration:none}
           <input type="text" id="fMN" name="MotherName" placeholder="As registered with university" required autocomplete="off">
         </div>
         <div class="capw" id="capW">
-          <img class="cimg" id="capI" src="#" alt="Captcha" style="display:none">
+          <img class="cimg" id="capI" src="#" alt="Captcha" style="display:none" loading="lazy">
           <div class="cload" id="capL"><div class="cs"></div> Loading captcha...</div>
           <button class="cr" id="capR">&#8635; New Image</button>
           <div class="capm" id="capM">
@@ -533,7 +548,7 @@ if(/^LLM\b/i.test(name)||/^LLM\b/i.test(n))return'law';
 return'other'}
 function e(t,d,dt,ty,la,fn){const b=$('err');$('erT').textContent=t;$('erD').textContent=d;$('erDt').textContent=dt||'';b.className='err '+ty+' show';b.querySelector('.ei').textContent=ty==='d'?'\u26A0':'\u2139';const a=$('erA');a.textContent=la||'Retry';a.style.display=fn?'inline-flex':'none';a.onclick=function(ev){ev.stopPropagation();if(fn)fn()}}
 function hE(){$('err').classList.remove('show')}
-function tS(m,ty){const t=$('ts');$('tsT').textContent=m;const is={suc:'\u2713',err:'\u26A0',inf:'\u2139'};t.querySelector('.ti').textContent=is[ty]||'\u2139';t.className='ts '+ty;clearTimeout(tm);requestAnimationFrame(()=>{t.classList.add('s');tm=setTimeout(()=>t.classList.remove('s'),3500)})}
+function tS(m,ty){const t=$('ts');$('tsT').textContent=m;const is={suc:'\u2713',err:'\u26A0',inf:'\u2139'};t.querySelector('.ti').textContent=is[ty]||'\u2139';t.className='ts '+ty;clearTimeout(tm);requestAnimationFrame(()=>{t.classList.add('s');tm=setTimeout(()=>requestAnimationFrame(()=>t.classList.remove('s')),3500)})}
 function so(){e('No Internet Connection','Please check your internet connection and try again.','','d','Retry',()=>{if(navigator.onLine){hE();lC($('sessS').value)}else so()});const a=$('ca');if(a)a.innerHTML='<div class="empty"><div class="ei">&#128246;</div><h3>No Internet</h3><p>You appear to be offline. Connect to the internet and tap Retry above.</p></div>'}
 function es(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
 function fd(s){if(!s)return'-';const ms={Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};const m=s.match(/(\d{2})-\s*(\w+)-?\s*(\d{4})?/);if(m){const d=new Date(parseInt(m[3]||2026),parseInt(ms[m[2]]||0)-1,parseInt(m[1]));return isNaN(d)?s:d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}return s}
@@ -563,17 +578,17 @@ window.addEventListener('online',function(){hE();lC($('sessS').value)});
 document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',function(){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('a'));this.classList.add('a');const p=$('p-'+this.dataset.tab);if(p)p.classList.add('a');if(this.dataset.tab==='v'&&!rvC.length)rvLC()})});
 $('erX').addEventListener('click',hE);
 $('sessS').addEventListener('change',function(){lC(this.value)});
-$('srch').addEventListener('input',fC);
+let sD;$('srch').addEventListener('input',function(){clearTimeout(sD);sD=setTimeout(fC,80)});
 $('sortS').addEventListener('change',function(){SB=this.value;fC()});
 $('catS').addEventListener('change',function(){aC=this.value;$('srch').value='';fC()});
 $('ref').addEventListener('click',function(){lC($('sessS').value)});
 $('mX').addEventListener('click',cM);
 $('canB').addEventListener('click',cM);
 $('mo').addEventListener('click',function(e){if(e.target===this)cM()});
-document.addEventListener('keydown',function(e){if(e.key==='Escape')cM()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')cM()});document.addEventListener('touchstart',function(){},{passive:true});document.addEventListener('wheel',function(){},{passive:true});
 $('capR').addEventListener('click',function(e){e.preventDefault();lCap()});
 $('capO').addEventListener('click',function(e){e.preventDefault();window.open('https://onlineresults.unipune.ac.in/Result/Dashboard/Default','_blank')});
-$('rF').addEventListener('submit',function(e){const s=$('fSN').value.trim(),m=$('fMN').value.trim(),c=$('fCT').value.trim(),o=$('fOC').value;if(!s){tS('Enter seat number','err');e.preventDefault();return}if(!m){tS('Enter mother\'s name','err');e.preventDefault();return}if(c.length!==5){tS('Captcha must be 5 characters','err');e.preventDefault();return}if(!o){tS('Refresh captcha','err');e.preventDefault();return}tS('Fetching result...','inf')});
+$('rF').addEventListener('submit',function(e){e.preventDefault();const s=$('fSN').value.trim(),m=$('fMN').value.trim(),c=$('fCT').value.trim(),o=$('fOC').value;if(!s){tS('Enter seat number','err');return}if(!m){tS('Enter mother\'s name','err');return}if(c.length!==5){tS('Captcha must be 5 characters','err');return}if(!o){tS('Refresh captcha','err');return}tS('Fetching result...','inf');$('rF').submit()});
 const lc=$('lc');const gp={};LK.forEach(l=>{if(!gp[l.c])gp[l.c]=[];gp[l.c].push(l)});let lh='';Object.entries(gp).forEach(([cat,links])=>{lh+=`<div class="ctt">${es(cat)}</div><div class="lg">`;links.forEach(l=>{lh+=`<a class="lc" href="${es(l.u)}" target="_blank" rel="noopener"><div class="ct">${es(l.c)}</div><div class="tt">${es(l.t)}</div>${l.d?`<div class="dc">${es(l.d)}</div>`:''}</a>`});lh+='</div>'});lc.innerHTML=lh;
 if(typeof navigator!=='undefined'&&!navigator.onLine){so();return}
 await Promise.all([(async()=>{try{let r=await fetch((WP?WU:A)+'/api/sessions',{signal:AbortSignal.timeout(10000)});if(r.ok){let d=await r.json();const sel=$('sessS');sel.innerHTML='<option value="">All Sessions</option>';if(Array.isArray(d))d.forEach(s=>{if(s.Exam_Period&&s.Exam_Name){const o=document.createElement('option');o.value=s.Exam_Period;o.textContent=s.Exam_Name;sel.appendChild(o)}})}else throw new Error('Not OK')}catch(ex){try{if(ES&&ES.length){const sel=$('sessS');sel.innerHTML='<option value="">All Sessions</option>';ES.forEach(s=>{if(s[1]){const o=document.createElement('option');o.value=s[1];o.textContent=s[0];sel.appendChild(o)}});EP=true}}catch(e2){}console.warn('Sessions:',ex.message)}})(),lC(''),rvLC()])}
@@ -586,7 +601,7 @@ async function rvLC(){const el=$('rvCa');el.innerHTML=rvSK(10);try{if(!rvPromise
 async function rvOM(et,cn){if(!et){tS('Invalid course data','err');return}$('rvCN').textContent=cn||'';$('rvET').value=et;$('rvSV').value='';$('rvRes').style.display='none';$('rvRes').innerHTML='';$('rvMo').classList.add('a');document.body.style.overflow='hidden'}
 function rvCM(){$('rvMo').classList.remove('a');document.body.style.overflow=''}
 async function rvSearch(e){e.preventDefault();const et=$('rvET').value,sb=$('rvSB').value,sv=$('rvSV').value.trim();if(!sv){tS('Enter a search value','err');return}const s=$('rvSubB');s.disabled=true;s.textContent='Searching...';$('rvRes').style.display='none';try{const r=await fetch((WP?WU:A)+'/api/reval',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'event_target='+encodeURIComponent(et)+'&search_by='+encodeURIComponent(sb)+'&search_value='+encodeURIComponent(sv),signal:AbortSignal.timeout(60000)});const d=await r.json();if(d.error){tS('Failed: '+d.error,'err');s.disabled=false;s.textContent='Search';return}let html=d.html||'';if(html.length<100){tS('No result found','inf');$('rvRes').innerHTML='<p style="color:var(--text2)">No result found. Try a different value.</p>';$('rvRes').style.display='block';s.disabled=false;s.textContent='Search';return}$('rvRes').innerHTML=html;$('rvRes').style.display='block';tS('Result loaded','suc')}catch(ex){tS('Search failed','err');$('rvRes').innerHTML='<p style="color:var(--danger)">Error: '+es(ex.message)+'</p>';$('rvRes').style.display='block'}s.disabled=false;s.textContent='Search'}
-$('rvSrch').addEventListener('input',rvFilter);
+let rvD;$('rvSrch').addEventListener('input',function(){clearTimeout(rvD);rvD=setTimeout(rvFilter,80)});
 $('rvSortS').addEventListener('change',function(){rvSB=this.value;rvRC()});
 $('rvRef').addEventListener('click',rvLC);
 $('rvMX').addEventListener('click',rvCM);
