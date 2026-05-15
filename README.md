@@ -1,5 +1,7 @@
 # SPPU Result Viewer
 
+> **Disclaimer:** This project is **not affiliated with or endorsed by Savitribai Phule Pune University**. Results shown are provisional — always verify with the official university marksheet. No personal data is stored or sent to third parties.
+
 A frontend tool to check Savitribai Phule Pune University exam results — fetched live from the SPPU online portal.
 
 ## Features
@@ -37,6 +39,4 @@ Or serve `index.html` as static files. When no backend is available, the embedde
 
 Python API endpoints (`/api/sessions`, `/api/courses`, `/api/captcha`, `/api/result`, `/api/reval`) double as Vercel serverless functions under `api/`.
 
-## Disclaimer
 
-This project is **not affiliated with or endorsed by Savitribai Phule Pune University**. Results shown are provisional — always verify with the official university marksheet. No personal data is stored or sent to third parties.
