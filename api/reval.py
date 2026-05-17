@@ -62,7 +62,7 @@ def _pager_links(html):
             links.append((int(pm.group(1)), target, arg))
     return links
 
-MAX_REVAL_PAGES = 25
+MAX_REVAL_PAGES = 20
 
 def scrape_courses():
     html, sid = _fetch("GET", "/revalresult/")
@@ -118,14 +118,10 @@ def search_result(event_target, search_by, search_value):
         if len(inner) > 100: return {"html": inner}
     return {"html": rh}
 
-def _send_json(self, data, status=200, cache=False):
+def _send_json(self, data, status=200):
     self.send_response(status)
     self.send_header("Content-Type", "application/json")
     self.send_header("Access-Control-Allow-Origin", "*")
-    if cache:
-        self.send_header("Cache-Control", "public, max-age=3600, s-maxage=3600")
-    else:
-        self.send_header("Cache-Control", "no-store")
     self.end_headers()
     self.wfile.write(json.dumps(data).encode())
 
@@ -140,7 +136,7 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
             data = scrape_courses()
-            _send_json(self, data, cache=True)
+            _send_json(self, data)
         except Exception as e:
             _send_json(self, {"error": str(e)}, 500)
 
