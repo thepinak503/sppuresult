@@ -75,13 +75,15 @@ async function handleRequest(request) {
       if (gridMatch) {
         const rows = gridMatch[1].match(/<tr[^>]*>(.*?)<\/tr>/gs) || [];
         for (const row of rows) {
-          if (/HeaderStyle|PagerStyle|FooterStyle/.test(row)) continue;
+          if (/HeaderStyle|PagerStyle|FooterStyle|GridViewFooterStyle/.test(row)) continue;
           const cells = row.match(/<td[^>]*>(.*?)<\/td>/gs) || [];
           if (cells.length < 3) continue;
           const course = cells[0].replace(/<[^>]+>/g, '').trim();
           const subject = cells[1].replace(/<[^>]+>/g, '').trim();
+          if (!course || !subject || course === '...') continue;
           const etMatch = cells[2].match(/__doPostBack\(&#39;([^&#]+?)&#39;/);
-          courses.push({ course, subject, event_target: etMatch ? etMatch[1] : '' });
+          if (!etMatch) continue;
+          courses.push({ course, subject, event_target: etMatch[1] });
         }
       }
       // Paginate through remaining pages — follow actual pager links (like Android scraper)
@@ -91,7 +93,7 @@ async function handleRequest(request) {
       const seen = new Set(courses.map(c => `${c.course}|${c.subject}|${c.event_target}`));
       let currentHtml = html;
       let currentPage = 1;
-      for (let iter = 0; iter < 100; iter++) {
+      for (let iter = 0; iter < 10; iter++) {
         const pager = [...currentHtml.matchAll(/__doPostBack\(&#39;(.+?)&#39;,\s*&#39;(.+?)&#39;/g)];
         let nextPage = null, nextTarget = '', nextArg = '';
         for (const m of pager) {
@@ -124,16 +126,18 @@ async function handleRequest(request) {
         if (pg) {
           const prs = pg[1].match(/<tr[^>]*>(.*?)<\/tr>/gs) || [];
           for (const row of prs) {
-            if (/HeaderStyle|PagerStyle|FooterStyle/.test(row)) continue;
+            if (/HeaderStyle|PagerStyle|FooterStyle|GridViewFooterStyle/.test(row)) continue;
             const cells = row.match(/<td[^>]*>(.*?)<\/td>/gs) || [];
             if (cells.length < 3) continue;
             const course = cells[0].replace(/<[^>]+>/g, '').trim();
             const subject = cells[1].replace(/<[^>]+>/g, '').trim();
+            if (!course || !subject || course === '...') continue;
             const etMatch = cells[2].match(/__doPostBack\(&#39;([^&#]+?)&#39;/);
-            const key = `${course}|${subject}|${etMatch ? etMatch[1] : ''}`;
+            if (!etMatch) continue;
+            const key = `${course}|${subject}|${etMatch[1]}`;
             if (!seen.has(key)) {
               seen.add(key);
-              courses.push({ course, subject, event_target: etMatch ? etMatch[1] : '' });
+              courses.push({ course, subject, event_target: etMatch[1] });
             }
           }
         }

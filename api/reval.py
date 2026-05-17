@@ -40,12 +40,16 @@ def _courses(html):
     rows = re.findall(r'<tr[^>]*>(.*?)</tr>', m.group(1), re.DOTALL)
     for row in rows:
         if "HeaderStyle" in row or "PagerStyle" in row or "FooterStyle" in row: continue
+        if "GridViewFooterStyle" in row: continue
         cells = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL)
         if len(cells) < 3: continue
         course = re.sub(r'<[^>]+>', "", cells[0]).strip()
         subject = re.sub(r'<[^>]+>', "", cells[1]).strip()
+        if not course or not subject: continue
+        if course in ("...", "&hellip;", ""): continue
         etm = re.search(r"__doPostBack\(&#39;([^&#]+?)&#39;", cells[2])
-        courses.append({"course": course, "subject": subject, "event_target": etm.group(1) if etm else ""})
+        if not etm: continue
+        courses.append({"course": course, "subject": subject, "event_target": etm.group(1)})
     return courses
 
 def _pager_links(html):
@@ -58,6 +62,8 @@ def _pager_links(html):
             links.append((int(pm.group(1)), target, arg))
     return links
 
+MAX_REVAL_PAGES = 10
+
 def scrape_courses():
     html, sid = _fetch("GET", "/revalresult/")
     cj = {"ASP.NET_SessionId": sid} if sid else {}
@@ -65,7 +71,7 @@ def scrape_courses():
     seen = {(c["course"], c["subject"], c["event_target"]) for c in all_courses}
     vs, ev, vsg = _vs(html)
     current_page = 1
-    for _ in range(100):
+    for _ in range(MAX_REVAL_PAGES):
         pager = _pager_links(html)
         next_page = None
         next_target = ""
