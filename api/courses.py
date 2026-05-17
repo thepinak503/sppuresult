@@ -29,6 +29,7 @@ class handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Cache-Control", "public, max-age=1800, s-maxage=1800")
             sc = resp.headers.get("Set-Cookie")
             if sc: self.send_header("Set-Cookie", sc.split(";")[0])
             self.end_headers()

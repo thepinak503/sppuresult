@@ -118,10 +118,14 @@ def search_result(event_target, search_by, search_value):
         if len(inner) > 100: return {"html": inner}
     return {"html": rh}
 
-def _send_json(self, data, status=200):
+def _send_json(self, data, status=200, cache=False):
     self.send_response(status)
     self.send_header("Content-Type", "application/json")
     self.send_header("Access-Control-Allow-Origin", "*")
+    if cache:
+        self.send_header("Cache-Control", "public, max-age=3600, s-maxage=3600")
+    else:
+        self.send_header("Cache-Control", "no-store")
     self.end_headers()
     self.wfile.write(json.dumps(data).encode())
 
@@ -136,7 +140,7 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
             data = scrape_courses()
-            _send_json(self, data)
+            _send_json(self, data, cache=True)
         except Exception as e:
             _send_json(self, {"error": str(e)}, 500)
 
