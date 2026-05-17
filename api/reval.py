@@ -62,7 +62,7 @@ def _pager_links(html):
             links.append((int(pm.group(1)), target, arg))
     return links
 
-MAX_REVAL_PAGES = 10
+MAX_REVAL_PAGES = 25
 
 def scrape_courses():
     html, sid = _fetch("GET", "/revalresult/")

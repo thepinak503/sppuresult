@@ -93,7 +93,7 @@ async function handleRequest(request) {
       const seen = new Set(courses.map(c => `${c.course}|${c.subject}|${c.event_target}`));
       let currentHtml = html;
       let currentPage = 1;
-      for (let iter = 0; iter < 10; iter++) {
+      for (let iter = 0; iter < 25; iter++) {
         const pager = [...currentHtml.matchAll(/__doPostBack\(&#39;(.+?)&#39;,\s*&#39;(.+?)&#39;/g)];
         let nextPage = null, nextTarget = '', nextArg = '';
         for (const m of pager) {
