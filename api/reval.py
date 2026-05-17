@@ -48,19 +48,49 @@ def _courses(html):
         courses.append({"course": course, "subject": subject, "event_target": etm.group(1) if etm else ""})
     return courses
 
+def _pager_links(html):
+    links = []
+    for m in re.finditer(r"__doPostBack\(&#39;(.+?)&#39;,\s*&#39;(.+?)&#39;", html):
+        target = m.group(1)
+        arg = m.group(2)
+        pm = re.search(r"Page\$(\d+)", arg)
+        if pm:
+            links.append((int(pm.group(1)), target, arg))
+    return links
+
 def scrape_courses():
     html, sid = _fetch("GET", "/revalresult/")
     cj = {"ASP.NET_SessionId": sid} if sid else {}
     all_courses = _courses(html)
+    seen = {(c["course"], c["subject"], c["event_target"]) for c in all_courses}
     vs, ev, vsg = _vs(html)
-    pages = re.findall(r"__doPostBack\(.*?grdColleges.*?Page\$(\d+)", html)
-    max_page = max(int(p) for p in pages) if pages else 1
-    for p in range(2, max_page + 1):
-        fd = {"__VIEWSTATE": vs, "__EVENTVALIDATION": ev, "__VIEWSTATEGENERATOR": vsg, "__EVENTTARGET": "grdColleges", "__EVENTARGUMENT": f"Page${p}"}
+    current_page = 1
+    for _ in range(100):
+        pager = _pager_links(html)
+        next_page = None
+        next_target = ""
+        next_arg = ""
+        for pn, t, a in pager:
+            if pn > current_page and (next_page is None or pn < next_page):
+                next_page = pn
+                next_target = t
+                next_arg = a
+        if next_page is None:
+            break
+        fd = {"__VIEWSTATE": vs, "__EVENTVALIDATION": ev, "__VIEWSTATEGENERATOR": vsg, "__EVENTTARGET": next_target, "__EVENTARGUMENT": next_arg}
         h, sid = _fetch("POST", "/revalresult/", fd, cj)
-        if sid: cj["ASP.NET_SessionId"] = sid
+        if not h:
+            break
+        if sid:
+            cj["ASP.NET_SessionId"] = sid
         vs, ev, vsg = _vs(h)
-        all_courses.extend(_courses(h))
+        for c in _courses(h):
+            key = (c["course"], c["subject"], c["event_target"])
+            if key not in seen:
+                seen.add(key)
+                all_courses.append(c)
+        current_page = next_page
+        html = h
     return all_courses
 
 def search_result(event_target, search_by, search_value):

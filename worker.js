@@ -84,22 +84,39 @@ async function handleRequest(request) {
           courses.push({ course, subject, event_target: etMatch ? etMatch[1] : '' });
         }
       }
-      // Paginate through remaining pages
+      // Paginate through remaining pages — follow actual pager links (like Android scraper)
       let vs = (html.match(/__VIEWSTATE[^>]*value="([^"]*)"/) || [])[1] || '';
       let ev = (html.match(/__EVENTVALIDATION[^>]*value="([^"]*)"/) || [])[1] || '';
       let vsg = (html.match(/__VIEWSTATEGENERATOR[^>]*value="([^"]*)"/) || [])[1] || '';
-      const pages = [...html.matchAll(/__doPostBack\(.*?grdColleges.*?Page\$(\d+)/g)].map(m => parseInt(m[1]));
-      const maxPage = pages.length ? Math.max(...pages) : 1;
-      for (let p = 2; p <= maxPage; p++) {
+      const seen = new Set(courses.map(c => `${c.course}|${c.subject}|${c.event_target}`));
+      let currentHtml = html;
+      let currentPage = 1;
+      for (let iter = 0; iter < 100; iter++) {
+        const pager = [...currentHtml.matchAll(/__doPostBack\(&#39;(.+?)&#39;,\s*&#39;(.+?)&#39;/g)];
+        let nextPage = null, nextTarget = '', nextArg = '';
+        for (const m of pager) {
+          const target = m[1], arg = m[2];
+          const pm = arg.match(/Page\$(\d+)/);
+          if (pm) {
+            const pn = parseInt(pm[1]);
+            if (pn > currentPage && (nextPage === null || pn < nextPage)) {
+              nextPage = pn;
+              nextTarget = target;
+              nextArg = arg;
+            }
+          }
+        }
+        if (nextPage === null) break;
         const fd = new URLSearchParams();
         fd.set('__VIEWSTATE', vs);
         fd.set('__EVENTVALIDATION', ev);
         fd.set('__VIEWSTATEGENERATOR', vsg);
-        fd.set('__EVENTTARGET', 'grdColleges');
-        fd.set('__EVENTARGUMENT', `Page$${p}`);
+        fd.set('__EVENTTARGET', nextTarget);
+        fd.set('__EVENTARGUMENT', nextArg);
         const pr = await fetch(`${REVAL}/revalresult/`, { method: 'POST', headers: { ...rh(), 'Content-Type': 'application/x-www-form-urlencoded' }, body: fd.toString() });
         saveRevalCookie(pr);
         const ph = await pr.text();
+        if (!ph) break;
         vs = (ph.match(/__VIEWSTATE[^>]*value="([^"]*)"/) || [])[1] || '';
         ev = (ph.match(/__EVENTVALIDATION[^>]*value="([^"]*)"/) || [])[1] || '';
         vsg = (ph.match(/__VIEWSTATEGENERATOR[^>]*value="([^"]*)"/) || [])[1] || '';
@@ -113,9 +130,15 @@ async function handleRequest(request) {
             const course = cells[0].replace(/<[^>]+>/g, '').trim();
             const subject = cells[1].replace(/<[^>]+>/g, '').trim();
             const etMatch = cells[2].match(/__doPostBack\(&#39;([^&#]+?)&#39;/);
-            courses.push({ course, subject, event_target: etMatch ? etMatch[1] : '' });
+            const key = `${course}|${subject}|${etMatch ? etMatch[1] : ''}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              courses.push({ course, subject, event_target: etMatch ? etMatch[1] : '' });
+            }
           }
         }
+        currentPage = nextPage;
+        currentHtml = ph;
       }
       return jsonResponse(courses, cors);
     }
