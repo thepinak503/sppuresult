@@ -107,6 +107,67 @@ class RevalScraper:
         exam_name = re.sub(r'<[^>]+>', '', re.search(r'id="cboExamName"[^>]*>.*?</select>', h, re.DOTALL).group(0) if re.search(r'id="cboExamName"[^>]*>.*?</select>', h, re.DOTALL) else "")
         return {"vs": vs, "ev": ev, "vsg": vsg, "exam_val": exam_val}
 
+    def _extract_result_content(self, html):
+        cleaned = re.sub(r'<script[^>]*>.*?</script>|<style[^>]*>.*?</style>|<link[^>]*>', '', html, flags=re.DOTALL)
+        cleaned = re.sub(r'<input[^>]*type="hidden"[^>]*>', '', cleaned)
+        cleaned = re.sub(r'<img[^>]*>', '', cleaned)
+        cleaned = re.sub(r'<!--.*?-->', '', cleaned, flags=re.DOTALL)
+
+        # Find the result table by looking for known column headers
+        tables = re.finditer(r'(<table[^>]*>(?:(?!</table>)[\s\S])*?</table>)', cleaned, re.DOTALL | re.IGNORECASE)
+        candidates = []
+        for t in tables:
+            tc = t.group(1)
+            if re.search(r'SubCode|SubName|Obt[^a-z]|Chng[^a-z]|Remarks', tc, re.IGNORECASE):
+                candidates.append(tc)
+
+        if candidates:
+            best = max(candidates, key=len)
+            idx = cleaned.find(best)
+            before = cleaned[max(0, idx-800):idx]
+            student_info = ''
+            si_m = re.search(r'(Seat\s*(?:No|Number)[^<]*(?:<[^>]*>)*[^<]*?(?:S\d[\d/]*[A-Z]?)?)', before, re.DOTALL | re.IGNORECASE)
+            if si_m:
+                student_info = si_m.group(1)
+            name_m = re.search(r'(Name[^<]*(?:<[^>]*>)*[^<]*?[A-Z][a-zA-Z\s]+)', before, re.DOTALL | re.IGNORECASE)
+            if name_m:
+                student_info += '<br>' + name_m.group(1)
+            prn_m = re.search(r'(PRN[^<]*(?:<[^>]*>)*[^<]*?(?:\d+[A-Z]?)?)', before, re.DOTALL | re.IGNORECASE)
+            if prn_m:
+                student_info += '<br>' + prn_m.group(1)
+            wrap = '<div class="reval-result">'
+            if student_info:
+                wrap += '<div class="rv-student-info">' + student_info.strip() + '</div>'
+            wrap += best + '</div>'
+            return wrap
+
+        # Fallback: look for content area in typical ASP.NET layout
+        for pat in [
+            r'<td[^>]*class="[^"]*content[^"]*"[^>]*>(.*?)</td>',
+            r'<div[^>]*class="[^"]*content[^"]*"[^>]*>(.*?)</div>',
+            r'<td[^>]*id="[^"]*content[^"]*"[^>]*>(.*?)</td>',
+            r'<div[^>]*id="[^"]*content[^"]*"[^>]*>(.*?)</div>',
+        ]:
+            m = re.search(pat, cleaned, re.DOTALL | re.IGNORECASE)
+            if m:
+                inner = m.group(1).strip()
+                if len(inner) > 100:
+                    return '<div class="reval-result">' + inner + '</div>'
+        return None
+
+    def search_full(self, event_target, search_by, search_value):
+        self._make_opener()
+        html = self._fetch("/revalresult/")
+        vs, ev, vsg = self._extract_vs(html)
+        form = {"__VIEWSTATE": vs, "__EVENTVALIDATION": ev,
+                "__VIEWSTATEGENERATOR": vsg, "__EVENTTARGET": event_target,
+                "__EVENTARGUMENT": ""}
+        h = self._fetch("/revalresult/", form)
+        vs, ev, vsg = self._extract_vs(h)
+        exam_m = re.search(r'id="cboExamName"[^>]*>.*?<option[^>]*selected[^>]*value="([^"]*)"', h, re.DOTALL)
+        exam_val = exam_m.group(1) if exam_m else ""
+        return self.search_result(vs, ev, vsg, exam_val, search_by, search_value)
+
     def search_result(self, vs, ev, vsg, exam_val, search_by, search_value):
         form = {
             "__VIEWSTATE": vs, "__EVENTVALIDATION": ev,
@@ -115,6 +176,9 @@ class RevalScraper:
             "txtSearch": search_value, "btnShow": "Submit",
         }
         h = self._fetch("/revalresult/", form)
+        extracted = self._extract_result_content(h)
+        if extracted:
+            return {"html": extracted}
         body = re.search(r'<body[^>]*>(.*)</body>', h, re.DOTALL)
         if body:
             inner = re.sub(r'<script[^>]*>.*?</script>|<style[^>]*>.*?</style>', '', body.group(1), flags=re.DOTALL)
@@ -299,7 +363,17 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             body = self.rfile.read(length).decode("utf-8", errors="replace") if length > 0 else ""
             post_data = dict(urllib.parse.parse_qsl(body))
 
-            if path == "/api/reval/view":
+            if path == "/api/reval":
+                event_target = post_data.get("event_target", "")
+                search_by = post_data.get("search_by", "Seat No")
+                search_value = post_data.get("search_value", "")
+                if not event_target or not search_value:
+                    self._send_error("Missing event_target or search_value", 400)
+                    return
+                result = reval.search_full(event_target, search_by, search_value)
+                self._send_json(result)
+
+            elif path == "/api/reval/view":
                 event_target = post_data.get("event_target", "")
                 result = reval.view_result_form(event_target)
                 self._send_json(result)

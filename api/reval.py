@@ -62,7 +62,7 @@ def _pager_links(html):
             links.append((int(pm.group(1)), target, arg))
     return links
 
-MAX_REVAL_PAGES = 20
+MAX_REVAL_PAGES = 50
 
 def scrape_courses():
     html, sid = _fetch("GET", "/revalresult/")
@@ -99,6 +99,50 @@ def scrape_courses():
         html = h
     return all_courses
 
+def _extract_result(html):
+    cleaned = re.sub(r'<script[^>]*>[\s\S]*?</script>|<style[^>]*>[\s\S]*?</style>|<link[^>]*>', '', html, flags=re.DOTALL)
+    cleaned = re.sub(r'<input[^>]*type="hidden"[^>]*>', '', cleaned)
+    cleaned = re.sub(r'<img[^>]*>', '', cleaned)
+    cleaned = re.sub(r'<!--.*?-->', '', cleaned, flags=re.DOTALL)
+
+    tables = re.finditer(r'(<table[^>]*>(?:(?!</table>)[\s\S])*?</table>)', cleaned, re.DOTALL | re.IGNORECASE)
+    candidates = []
+    for t in tables:
+        tc = t.group(1)
+        if re.search(r'SubCode|SubName|Obt[^a-z]|Chng[^a-z]|Remarks', tc, re.IGNORECASE):
+            candidates.append(tc)
+
+    if candidates:
+        best = max(candidates, key=len)
+        idx = cleaned.find(best)
+        before = cleaned[max(0, idx-800):idx]
+        student_info = ''
+        si_m = re.search(r'(Seat\s*(?:No|Number)[^<]*(?:<[^>]*>)*[^<]*?(?:S\d[\d/]*[A-Z]?)?)', before, re.DOTALL | re.IGNORECASE)
+        if si_m: student_info = si_m.group(1)
+        nm_m = re.search(r'(Name[^<]*(?:<[^>]*>)*[^<]*?[A-Z][a-zA-Z\s]+)', before, re.DOTALL | re.IGNORECASE)
+        if nm_m: student_info += '<br>' + nm_m.group(1)
+        prn_m = re.search(r'(PRN[^<]*(?:<[^>]*>)*[^<]*?(?:\d+[A-Z]?)?)', before, re.DOTALL | re.IGNORECASE)
+        if prn_m: student_info += '<br>' + prn_m.group(1)
+        wrap = '<div class="reval-result">'
+        if student_info:
+            wrap += '<div class="rv-student-info">' + student_info.strip() + '</div>'
+        wrap += best + '</div>'
+        return wrap
+
+    for pat in [
+        r'<td[^>]*class="[^"]*content[^"]*"[^>]*>(.*?)</td>',
+        r'<div[^>]*class="[^"]*content[^"]*"[^>]*>(.*?)</div>',
+        r'<td[^>]*id="[^"]*content[^"]*"[^>]*>(.*?)</td>',
+        r'<div[^>]*id="[^"]*content[^"]*"[^>]*>(.*?)</div>',
+    ]:
+        m = re.search(pat, cleaned, re.DOTALL | re.IGNORECASE)
+        if m:
+            inner = m.group(1).strip()
+            if len(inner) > 100:
+                return '<div class="reval-result">' + inner + '</div>'
+    return None
+
+
 def search_result(event_target, search_by, search_value):
     html, sid = _fetch("GET", "/revalresult/")
     cj = {"ASP.NET_SessionId": sid} if sid else {}
@@ -111,6 +155,9 @@ def search_result(event_target, search_by, search_value):
     exam_val = exam_m.group(1) if exam_m else ""
     fd2 = {"__VIEWSTATE": vs, "__EVENTVALIDATION": ev, "__VIEWSTATEGENERATOR": vsg, "__EVENTTARGET": "", "__EVENTARGUMENT": "", "cboExamName": exam_val, "cboSearchBy": search_by, "txtSearch": search_value, "btnShow": "Submit"}
     rh, _ = _fetch("POST", "/revalresult/", fd2, cj)
+    extracted = _extract_result(rh)
+    if extracted:
+        return {"html": extracted}
     body_m = re.search(r'<body[^>]*>([\s\S]*)</body>', rh, re.DOTALL)
     if body_m:
         inner = re.sub(r'<script[^>]*>[\s\S]*?</script>|<style[^>]*>[\s\S]*?</style>', "", body_m.group(1), flags=re.DOTALL)
