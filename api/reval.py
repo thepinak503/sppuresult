@@ -33,6 +33,16 @@ def _vs(html):
     vsg = re.search(r'__VIEWSTATEGENERATOR[^>]*value="([^"]*)"', html)
     return (vs.group(1) if vs else "", ev.group(1) if ev else "", vsg.group(1) if vsg else "")
 
+def _action(html):
+    m = re.search(r'<form[^>]*action="([^"]*)"', html, re.DOTALL)
+    if m:
+        a = m.group(1)
+        if a in ('', '.'): return '/revalresult/'
+        if a.startswith('./'): return '/revalresult/' + a[1:]
+        if a.startswith('/'): return a
+        return '/revalresult/' + a
+    return '/revalresult/'
+
 def _courses(html):
     courses = []
     m = re.search(r'<table[^>]*id="grdColleges"[^>]*>(.*?)</table>', html, re.DOTALL)
@@ -157,9 +167,10 @@ def search_result(event_target, search_by, search_value):
     h, sid = _fetch("POST", "/revalresult/", fd, cj)
     if sid: cj["ASP.NET_SessionId"] = sid
     vs, ev, vsg = _vs(h)
+    path = _action(h)
     exam_val = _extract_exam_val(h)
     fd2 = {"__VIEWSTATE": vs, "__EVENTVALIDATION": ev, "__VIEWSTATEGENERATOR": vsg, "__EVENTTARGET": "", "__EVENTARGUMENT": "", "cboExamName": exam_val, "cboSearchBy": search_by, "txtSearch": search_value, "btnShow": "Submit"}
-    rh, _ = _fetch("POST", "/revalresult/", fd2, cj)
+    rh, _ = _fetch("POST", path, fd2, cj)
     extracted = _extract_result(rh)
     if extracted:
         return {"html": extracted}

@@ -60,6 +60,19 @@ class RevalScraper:
                 ev.group(1) if ev else "",
                 vsg.group(1) if vsg else "")
 
+    def _extract_action(self, html):
+        m = re.search(r'<form[^>]*action="([^"]*)"', html, re.DOTALL)
+        if m:
+            action = m.group(1)
+            if action in ('', '.'):
+                return '/revalresult/'
+            if action.startswith('./'):
+                return '/revalresult/' + action[1:]
+            if action.startswith('/'):
+                return action
+            return '/revalresult/' + action
+        return '/revalresult/'
+
     def _extract_courses(self, html):
         courses = []
         m = re.search(r'<table[^>]*id="grdColleges"[^>]*>(.*?)</table>', html, re.DOTALL)
@@ -156,15 +169,17 @@ class RevalScraper:
 
     def search_full(self, event_target, search_by, search_value):
         self._make_opener()
-        html = self._fetch("/revalresult/")
+        path = '/revalresult/'
+        html = self._fetch(path)
         vs, ev, vsg = self._extract_vs(html)
         form = {"__VIEWSTATE": vs, "__EVENTVALIDATION": ev,
                 "__VIEWSTATEGENERATOR": vsg, "__EVENTTARGET": event_target,
                 "__EVENTARGUMENT": ""}
-        h = self._fetch("/revalresult/", form)
+        h = self._fetch(path, form)
+        path = self._extract_action(h)
         vs, ev, vsg = self._extract_vs(h)
         exam_val = self._extract_exam_val(h)
-        return self.search_result(vs, ev, vsg, exam_val, search_by, search_value)
+        return self.search_result(vs, ev, vsg, exam_val, search_by, search_value, path)
 
     def _extract_exam_val(self, html):
         m = re.search(r'id="cboExamName"[^>]*>.*?<option[^>]*selected[^>]*value="([^"]*)"', html, re.DOTALL)
@@ -172,14 +187,14 @@ class RevalScraper:
         m = re.search(r'id="cboExamName"[^>]*>.*?<option[^>]*value="([^"]*)"', html, re.DOTALL)
         return m.group(1) if m else ""
 
-    def search_result(self, vs, ev, vsg, exam_val, search_by, search_value):
+    def search_result(self, vs, ev, vsg, exam_val, search_by, search_value, path='/revalresult/'):
         form = {
             "__VIEWSTATE": vs, "__EVENTVALIDATION": ev,
             "__VIEWSTATEGENERATOR": vsg, "__EVENTTARGET": "", "__EVENTARGUMENT": "",
             "cboExamName": exam_val, "cboSearchBy": search_by,
             "txtSearch": search_value, "btnShow": "Submit",
         }
-        h = self._fetch("/revalresult/", form)
+        h = self._fetch(path, form)
         extracted = self._extract_result_content(h)
         if extracted:
             return {"html": extracted}

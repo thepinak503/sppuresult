@@ -196,6 +196,7 @@ async function handleRequest(request) {
       vs = (html2.match(/__VIEWSTATE[^>]*value="([^"]*)"/) || [])[1] || '';
       ev = (html2.match(/__EVENTVALIDATION[^>]*value="([^"]*)"/) || [])[1] || '';
       vsg = (html2.match(/__VIEWSTATEGENERATOR[^>]*value="([^"]*)"/) || [])[1] || '';
+      const searchPath = extractFormAction(html2);
       const examVal = extractExamVal(html2);
       let fd2 = new URLSearchParams();
       fd2.set('__VIEWSTATE', vs); fd2.set('__EVENTVALIDATION', ev);
@@ -203,7 +204,7 @@ async function handleRequest(request) {
       fd2.set('__EVENTARGUMENT', ''); fd2.set('cboExamName', examVal);
       fd2.set('cboSearchBy', sb); fd2.set('txtSearch', sv);
       fd2.set('btnShow', 'Submit');
-      let r3 = await fetch(`${REVAL}/revalresult/`, { method: 'POST', headers: { ...rh(), 'Content-Type': 'application/x-www-form-urlencoded' }, body: fd2.toString() });
+      let r3 = await fetch(`${REVAL}${searchPath}`, { method: 'POST', headers: { ...rh(), 'Content-Type': 'application/x-www-form-urlencoded' }, body: fd2.toString() });
       saveRevalCookie(r3);
       const html3 = await r3.text();
       const extracted = extractRevalResult(html3);
@@ -225,7 +226,8 @@ async function handleRequest(request) {
       formData.set('cboSearchBy', fd.get('search_by') || 'Seat No');
       formData.set('txtSearch', fd.get('search_value') || '');
       formData.set('btnShow', 'Submit');
-      const r = await fetch(`${REVAL}/revalresult/`, { method: 'POST', headers: { ...rh(), 'Content-Type': 'application/x-www-form-urlencoded' }, body: formData.toString() });
+      const rpath = fd.get('_path') || '/revalresult/';
+      const r = await fetch(`${REVAL}${rpath}`, { method: 'POST', headers: { ...rh(), 'Content-Type': 'application/x-www-form-urlencoded' }, body: formData.toString() });
       saveRevalCookie(r);
       const html = await r.text();
       const extracted = extractRevalResult(html);
@@ -273,6 +275,18 @@ function extractExamVal(html) {
   if (selectedMatch) return selectedMatch[1];
   const firstMatch = html.match(/<select[^>]*id="cboExamName"[^>]*>.*?<option[^>]*value="([^"]*)"/s);
   return firstMatch ? firstMatch[1] : '';
+}
+
+function extractFormAction(html) {
+  const m = html.match(/<form[^>]*action="([^"]*)"/);
+  if (m) {
+    let a = m[1];
+    if (!a || a === '.') return '/revalresult/';
+    if (a.startsWith('./')) return '/revalresult/' + a.substring(2);
+    if (a.startsWith('/')) return a;
+    return '/revalresult/' + a;
+  }
+  return '/revalresult/';
 }
 
 function extractRevalResult(html) {
