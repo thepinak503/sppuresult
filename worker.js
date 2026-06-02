@@ -206,7 +206,23 @@ async function handleRequest(request) {
       fd2.set('btnShow', 'Submit');
       let r3 = await fetch(`${REVAL}${searchPath}`, { method: 'POST', headers: { ...rh(), 'Content-Type': 'application/x-www-form-urlencoded' }, body: fd2.toString() });
       saveRevalCookie(r3);
-      const html3 = await r3.text();
+      let html3 = await r3.text();
+      // Check if we got a student list with "Result" links instead of actual result
+      const resultLinkMatch = html3.match(/__doPostBack\(&#39;(grdColleges\$ctl\d+\$LinkButton1)&#39;/);
+      if (resultLinkMatch) {
+        const rl = resultLinkMatch[1];
+        vs = (html3.match(/__VIEWSTATE[^>]*value="([^"]*)"/) || [])[1] || '';
+        ev = (html3.match(/__EVENTVALIDATION[^>]*value="([^"]*)"/) || [])[1] || '';
+        vsg = (html3.match(/__VIEWSTATEGENERATOR[^>]*value="([^"]*)"/) || [])[1] || '';
+        const path3 = extractFormAction(html3);
+        let fd3 = new URLSearchParams();
+        fd3.set('__VIEWSTATE', vs); fd3.set('__EVENTVALIDATION', ev);
+        fd3.set('__VIEWSTATEGENERATOR', vsg); fd3.set('__EVENTTARGET', rl);
+        fd3.set('__EVENTARGUMENT', '');
+        let r4 = await fetch(`${REVAL}${path3}`, { method: 'POST', headers: { ...rh(), 'Content-Type': 'application/x-www-form-urlencoded' }, body: fd3.toString() });
+        saveRevalCookie(r4);
+        html3 = await r4.text();
+      }
       const extracted = extractRevalResult(html3);
       if (extracted) return jsonResponse({ html: extracted }, cors);
       const bodyMatch = html3.match(/<body[^>]*>([\s\S]*)<\/body>/);
@@ -229,7 +245,23 @@ async function handleRequest(request) {
       const rpath = fd.get('_path') || '/revalresult/';
       const r = await fetch(`${REVAL}${rpath}`, { method: 'POST', headers: { ...rh(), 'Content-Type': 'application/x-www-form-urlencoded' }, body: formData.toString() });
       saveRevalCookie(r);
-      const html = await r.text();
+      let html = await r.text();
+      // Check if we got a student list with "Result" link instead of actual result
+      const resultLinkMatch = html.match(/__doPostBack\(&#39;(grdColleges\$ctl\d+\$LinkButton1)&#39;/);
+      if (resultLinkMatch) {
+        const rl = resultLinkMatch[1];
+        const vs3 = (html.match(/__VIEWSTATE[^>]*value="([^"]*)"/) || [])[1] || '';
+        const ev3 = (html.match(/__EVENTVALIDATION[^>]*value="([^"]*)"/) || [])[1] || '';
+        const vsg3 = (html.match(/__VIEWSTATEGENERATOR[^>]*value="([^"]*)"/) || [])[1] || '';
+        const path3 = extractFormAction(html);
+        let fd3 = new URLSearchParams();
+        fd3.set('__VIEWSTATE', vs3); fd3.set('__EVENTVALIDATION', ev3);
+        fd3.set('__VIEWSTATEGENERATOR', vsg3); fd3.set('__EVENTTARGET', rl);
+        fd3.set('__EVENTARGUMENT', '');
+        let r4 = await fetch(`${REVAL}${path3}`, { method: 'POST', headers: { ...rh(), 'Content-Type': 'application/x-www-form-urlencoded' }, body: fd3.toString() });
+        saveRevalCookie(r4);
+        html = await r4.text();
+      }
       const extracted = extractRevalResult(html);
       if (extracted) return jsonResponse({ html: extracted }, cors);
       const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/);

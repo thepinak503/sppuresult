@@ -159,6 +159,10 @@ def _extract_result(html):
     return None
 
 
+def _result_link(html):
+    m = re.search(r"__doPostBack\(&#39;(grdColleges\$ctl\d+\$LinkButton1)&#39;", html)
+    return m.group(1) if m else None
+
 def search_result(event_target, search_by, search_value):
     html, sid = _fetch("GET", "/revalresult/")
     cj = {"ASP.NET_SessionId": sid} if sid else {}
@@ -171,6 +175,13 @@ def search_result(event_target, search_by, search_value):
     exam_val = _extract_exam_val(h)
     fd2 = {"__VIEWSTATE": vs, "__EVENTVALIDATION": ev, "__VIEWSTATEGENERATOR": vsg, "__EVENTTARGET": "", "__EVENTARGUMENT": "", "cboExamName": exam_val, "cboSearchBy": search_by, "txtSearch": search_value, "btnShow": "Submit"}
     rh, _ = _fetch("POST", path, fd2, cj)
+    # Check if we got a student list with "Result" link instead of actual result
+    rl = _result_link(rh)
+    if rl:
+        vs3, ev3, vsg3 = _vs(rh)
+        path3 = _action(rh)
+        fd3 = {"__VIEWSTATE": vs3, "__EVENTVALIDATION": ev3, "__VIEWSTATEGENERATOR": vsg3, "__EVENTTARGET": rl, "__EVENTARGUMENT": ""}
+        rh, _ = _fetch("POST", path3, fd3, cj)
     extracted = _extract_result(rh)
     if extracted:
         return {"html": extracted}

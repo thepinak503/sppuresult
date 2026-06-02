@@ -195,6 +195,15 @@ class RevalScraper:
             "txtSearch": search_value, "btnShow": "Submit",
         }
         h = self._fetch(path, form)
+        # Check if we got a student list with "Result" links instead of the actual result
+        result_et = self._extract_result_link(h)
+        if result_et:
+            path2 = self._extract_action(h)
+            vs2, ev2, vsg2 = self._extract_vs(h)
+            form2 = {"__VIEWSTATE": vs2, "__EVENTVALIDATION": ev2,
+                     "__VIEWSTATEGENERATOR": vsg2, "__EVENTTARGET": result_et,
+                     "__EVENTARGUMENT": ""}
+            h = self._fetch(path2, form2)
         extracted = self._extract_result_content(h)
         if extracted:
             return {"html": extracted}
@@ -205,6 +214,13 @@ class RevalScraper:
             if len(inner) > 100:
                 return {"html": inner, "full": h}
         return {"html": h, "full": h}
+
+    def _extract_result_link(self, html):
+        # Look for a "Result" link in a table row that contains student info
+        m = re.search(r'__doPostBack\(&#39;(grdColleges\$ctl\d+\$LinkButton1)&#39;', html)
+        if m:
+            return m.group(1)
+        return None
 
 
 class SPPUSession:
