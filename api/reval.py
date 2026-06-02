@@ -134,11 +134,11 @@ def _extract_result(html):
         before = cleaned[max(0, idx-800):idx]
         student_info = ''
         si_m = re.search(r'(Seat\s*(?:No|Number)[^<]*(?:<[^>]*>)*[^<]*?(?:S\d[\d/]*[A-Z]?)?)', before, re.DOTALL | re.IGNORECASE)
-        if si_m: student_info = si_m.group(1)
+        if si_m: student_info = re.sub(r'<[^>]+>', '', si_m.group(1)).strip()
         nm_m = re.search(r'(Name[^<]*(?:<[^>]*>)*[^<]*?[A-Z][a-zA-Z\s]+)', before, re.DOTALL | re.IGNORECASE)
-        if nm_m: student_info += '<br>' + nm_m.group(1)
+        if nm_m: student_info += '<br>' + re.sub(r'<[^>]+>', '', nm_m.group(1)).strip()
         prn_m = re.search(r'(PRN[^<]*(?:<[^>]*>)*[^<]*?(?:\d+[A-Z]?)?)', before, re.DOTALL | re.IGNORECASE)
-        if prn_m: student_info += '<br>' + prn_m.group(1)
+        if prn_m: student_info += '<br>' + re.sub(r'<[^>]+>', '', prn_m.group(1)).strip()
         wrap = '<div class="reval-result">'
         if student_info:
             wrap += '<div class="rv-student-info">' + student_info.strip() + '</div>'

@@ -344,12 +344,13 @@ function extractRevalResult(html) {
     const idx = cleaned.indexOf(best);
     const before = cleaned.substring(Math.max(0, idx - 800), idx);
     let studentInfo = '';
+    const stripTags = s => s.replace(/<[^>]+>/g, '').trim();
     const siMatch = before.match(/(Seat\s*(?:No|Number)[^<]*(?:<[^>]*>)*[^<]*?(?:S\d[\d\/]*[A-Z]?)?)/i);
-    if (siMatch) studentInfo = siMatch[1];
+    if (siMatch) studentInfo = stripTags(siMatch[1]);
     const nmMatch = before.match(/(Name[^<]*(?:<[^>]*>)*[^<]*?[A-Z][a-zA-Z\s]+)/i);
-    if (nmMatch) studentInfo += '<br>' + nmMatch[1];
+    if (nmMatch) studentInfo += '<br>' + stripTags(nmMatch[1]);
     const prnMatch = before.match(/(PRN[^<]*(?:<[^>]*>)*[^<]*?(?:\d+[A-Z]?)?)/i);
-    if (prnMatch) studentInfo += '<br>' + prnMatch[1];
+    if (prnMatch) studentInfo += '<br>' + stripTags(prnMatch[1]);
     let wrap = '<div class="reval-result">';
     if (studentInfo) wrap += '<div class="rv-student-info">' + studentInfo.trim() + '</div>';
     wrap += best + '</div>';

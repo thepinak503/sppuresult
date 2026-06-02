@@ -140,13 +140,13 @@ class RevalScraper:
             student_info = ''
             si_m = re.search(r'(Seat\s*(?:No|Number)[^<]*(?:<[^>]*>)*[^<]*?(?:S\d[\d/]*[A-Z]?)?)', before, re.DOTALL | re.IGNORECASE)
             if si_m:
-                student_info = si_m.group(1)
+                student_info = re.sub(r'<[^>]+>', '', si_m.group(1)).strip()
             name_m = re.search(r'(Name[^<]*(?:<[^>]*>)*[^<]*?[A-Z][a-zA-Z\s]+)', before, re.DOTALL | re.IGNORECASE)
             if name_m:
-                student_info += '<br>' + name_m.group(1)
+                student_info += '<br>' + re.sub(r'<[^>]+>', '', name_m.group(1)).strip()
             prn_m = re.search(r'(PRN[^<]*(?:<[^>]*>)*[^<]*?(?:\d+[A-Z]?)?)', before, re.DOTALL | re.IGNORECASE)
             if prn_m:
-                student_info += '<br>' + prn_m.group(1)
+                student_info += '<br>' + re.sub(r'<[^>]+>', '', prn_m.group(1)).strip()
             wrap = '<div class="reval-result">'
             if student_info:
                 wrap += '<div class="rv-student-info">' + student_info.strip() + '</div>'
