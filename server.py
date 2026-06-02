@@ -102,8 +102,7 @@ class RevalScraper:
                 "__EVENTARGUMENT": ""}
         h = self._fetch("/revalresult/", form)
         vs, ev, vsg = self._extract_vs(h)
-        exam_m = re.search(r'id="cboExamName"[^>]*>.*?<option[^>]*selected[^>]*value="([^"]*)"', h, re.DOTALL)
-        exam_val = exam_m.group(1) if exam_m else ""
+        exam_val = self._extract_exam_val(h)
         exam_name = re.sub(r'<[^>]+>', '', re.search(r'id="cboExamName"[^>]*>.*?</select>', h, re.DOTALL).group(0) if re.search(r'id="cboExamName"[^>]*>.*?</select>', h, re.DOTALL) else "")
         return {"vs": vs, "ev": ev, "vsg": vsg, "exam_val": exam_val}
 
@@ -164,9 +163,14 @@ class RevalScraper:
                 "__EVENTARGUMENT": ""}
         h = self._fetch("/revalresult/", form)
         vs, ev, vsg = self._extract_vs(h)
-        exam_m = re.search(r'id="cboExamName"[^>]*>.*?<option[^>]*selected[^>]*value="([^"]*)"', h, re.DOTALL)
-        exam_val = exam_m.group(1) if exam_m else ""
+        exam_val = self._extract_exam_val(h)
         return self.search_result(vs, ev, vsg, exam_val, search_by, search_value)
+
+    def _extract_exam_val(self, html):
+        m = re.search(r'id="cboExamName"[^>]*>.*?<option[^>]*selected[^>]*value="([^"]*)"', html, re.DOTALL)
+        if m: return m.group(1)
+        m = re.search(r'id="cboExamName"[^>]*>.*?<option[^>]*value="([^"]*)"', html, re.DOTALL)
+        return m.group(1) if m else ""
 
     def search_result(self, vs, ev, vsg, exam_val, search_by, search_value):
         form = {

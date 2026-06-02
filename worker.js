@@ -196,8 +196,7 @@ async function handleRequest(request) {
       vs = (html2.match(/__VIEWSTATE[^>]*value="([^"]*)"/) || [])[1] || '';
       ev = (html2.match(/__EVENTVALIDATION[^>]*value="([^"]*)"/) || [])[1] || '';
       vsg = (html2.match(/__VIEWSTATEGENERATOR[^>]*value="([^"]*)"/) || [])[1] || '';
-      const examMatch = html2.match(/<select[^>]*id="cboExamName"[^>]*>.*?<option[^>]*selected[^>]*value="([^"]*)"/s);
-      const examVal = examMatch ? examMatch[1] : '';
+      const examVal = extractExamVal(html2);
       let fd2 = new URLSearchParams();
       fd2.set('__VIEWSTATE', vs); fd2.set('__EVENTVALIDATION', ev);
       fd2.set('__VIEWSTATEGENERATOR', vsg); fd2.set('__EVENTTARGET', '');
@@ -267,6 +266,13 @@ function saveCookie(r) {
     const p = sc.split(';')[0];
     if (p.includes('=')) sppuCookie = p;
   }
+}
+
+function extractExamVal(html) {
+  const selectedMatch = html.match(/<select[^>]*id="cboExamName"[^>]*>.*?<option[^>]*selected[^>]*value="([^"]*)"/s);
+  if (selectedMatch) return selectedMatch[1];
+  const firstMatch = html.match(/<select[^>]*id="cboExamName"[^>]*>.*?<option[^>]*value="([^"]*)"/s);
+  return firstMatch ? firstMatch[1] : '';
 }
 
 function extractRevalResult(html) {

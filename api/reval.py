@@ -99,6 +99,12 @@ def scrape_courses():
         html = h
     return all_courses
 
+def _extract_exam_val(html):
+    m = re.search(r'id="cboExamName"[^>]*>.*?<option[^>]*selected[^>]*value="([^"]*)"', html, re.DOTALL)
+    if m: return m.group(1)
+    m = re.search(r'id="cboExamName"[^>]*>.*?<option[^>]*value="([^"]*)"', html, re.DOTALL)
+    return m.group(1) if m else ""
+
 def _extract_result(html):
     cleaned = re.sub(r'<script[^>]*>[\s\S]*?</script>|<style[^>]*>[\s\S]*?</style>|<link[^>]*>', '', html, flags=re.DOTALL)
     cleaned = re.sub(r'<input[^>]*type="hidden"[^>]*>', '', cleaned)
@@ -151,8 +157,7 @@ def search_result(event_target, search_by, search_value):
     h, sid = _fetch("POST", "/revalresult/", fd, cj)
     if sid: cj["ASP.NET_SessionId"] = sid
     vs, ev, vsg = _vs(h)
-    exam_m = re.search(r'id="cboExamName"[^>]*>.*?<option[^>]*selected[^>]*value="([^"]*)"', h, re.DOTALL)
-    exam_val = exam_m.group(1) if exam_m else ""
+    exam_val = _extract_exam_val(h)
     fd2 = {"__VIEWSTATE": vs, "__EVENTVALIDATION": ev, "__VIEWSTATEGENERATOR": vsg, "__EVENTTARGET": "", "__EVENTARGUMENT": "", "cboExamName": exam_val, "cboSearchBy": search_by, "txtSearch": search_value, "btnShow": "Submit"}
     rh, _ = _fetch("POST", "/revalresult/", fd2, cj)
     extracted = _extract_result(rh)
