@@ -137,16 +137,18 @@ class RevalScraper:
             best = max(candidates, key=len)
             idx = cleaned.find(best)
             before = cleaned[max(0, idx-800):idx]
+            text_only = re.sub(r'<[^>]+>', ' ', before)
+            text_only = re.sub(r'\s+', ' ', text_only)
             student_info = ''
-            si_m = re.search(r'(Seat\s*(?:No|Number)[^<]*(?:<[^>]*>)*[^<]*?(?:S\d[\d/]*[A-Z]?)?)', before, re.DOTALL | re.IGNORECASE)
+            si_m = re.search(r'(Seat\s*No\s*:\s*\S+)', text_only, re.IGNORECASE)
             if si_m:
-                student_info = re.sub(r'<[^>]+>', '', si_m.group(1)).strip()
-            name_m = re.search(r'(Name[^<]*(?:<[^>]*>)*[^<]*?[A-Z][a-zA-Z\s]+)', before, re.DOTALL | re.IGNORECASE)
+                student_info = si_m.group(1)
+            name_m = re.search(r'(Name\s*:\s*[A-Z][a-zA-Z\s]+)', text_only)
             if name_m:
-                student_info += '<br>' + re.sub(r'<[^>]+>', '', name_m.group(1)).strip()
-            prn_m = re.search(r'(PRN[^<]*(?:<[^>]*>)*[^<]*?(?:\d+[A-Z]?)?)', before, re.DOTALL | re.IGNORECASE)
+                student_info += '<br>' + name_m.group(1).strip()
+            prn_m = re.search(r'(PRN\s*:\s*\S+)', text_only, re.IGNORECASE)
             if prn_m:
-                student_info += '<br>' + re.sub(r'<[^>]+>', '', prn_m.group(1)).strip()
+                student_info += '<br>' + prn_m.group(1)
             wrap = '<div class="reval-result">'
             if student_info:
                 wrap += '<div class="rv-student-info">' + student_info.strip() + '</div>'
