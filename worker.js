@@ -1,9 +1,30 @@
 // Cloudflare Worker — SPPU Result Proxy
 // Using HTTP because SPPU's SSL cert has incomplete chain (526 error)
-const SPPU = 'http://onlineresults.unipune.ac.in';
-const REVAL = 'https://pun.unipune.ac.in';
+// Modified for Vercel integration with existing GitHub setup
+const SPPU = process.env.SPPU_URL || 'http://onlineresults.unipune.ac.in';
+const REVAL = process.env.REVAL_URL || 'https://pun.unipune.ac.in';
+const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
 let sppuCookie = '';
 let revalCookie = '';
+
+// Vercel Integration Configuration
+const config = {
+  vercel: {
+    projectId: process.env.VERCEL_PROJECT_ID,
+    teamId: process.env.VERCEL_TEAM_ID,
+    authToken: process.env.VERCEL_AUTH_TOKEN,
+    enabled: !!(process.env.VERCEL_AUTH_TOKEN && process.env.VERCEL_PROJECT_ID)
+  },
+  spendManagement: {
+    enabled: process.env.SPEND_MANAGEMENT_WEBHOOK === 'true',
+    apiUrl: 'https://api.vercel.com/v1/projects',
+    timeout: parseInt(process.env.SPEND_WEBHOOK_TIMEOUT) || 30000
+  },
+  monitoring: {
+    healthCheckEnabled: process.env.HEALTH_CHECK_ENABLED === 'true',
+    logEndpoint: process.env.LOG_ENDPOINT || '/api/health'
+  }
+};
 
 async function handleRequest(request) {
   const url = new URL(request.url);
@@ -267,6 +288,122 @@ async function handleRequest(request) {
       const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/);
       const body = bodyMatch ? bodyMatch[1].replace(/<script[^>]*>[\s\S]*?<\/script>|<style[^>]*>[\s\S]*?<\/style>/g, '').trim() : html;
       return jsonResponse({ html: body.length > 100 ? body : html }, cors);
+    }
+
+    // Vercel Spend Management Webhook Endpoint
+    if (path === '/api/pause-project' || path === '/spend-webhook') {
+      const startTime = Date.now();
+      const logPrefix = `[Worker ${request.cf?.colo || 'unknown'}]`;
+
+      try {
+        if (!config.vercel.enabled) {
+          console.error(`${logPrefix} Vercel configuration not set up. Missing VERCEL_AUTH_TOKEN or VERCEL_PROJECT_ID`);
+          return jsonResponse({
+            error: 'Vercel configuration not set up',
+            timestamp: new Date().toISOString(),
+            path: path
+          }, { 'Content-Type': 'application/json' });
+        }
+
+        const authHeader = request.headers.get('Authorization') || '';
+        const authToken = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+        const isInternal = request.headers.get('X-Internal-Webhook') === 'true';
+
+        if (!isInternal && !authToken) {
+          console.error(`${logPrefix} Unauthorized pause attempt - missing auth token`);
+          return new Response(JSON.stringify({
+            error: 'Unauthorized',
+            message: 'Authentication required for pause operations',
+            timestamp: new Date().toISOString()
+          }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        const pauseBody = await request.text();
+        let pausePayload;
+
+        try {
+          pausePayload = JSON.parse(pauseBody);
+        } catch (parseError) {
+          console.error(`${logPrefix} Invalid JSON in pause request:`, parseError.message);
+          return new Response(JSON.stringify({
+            error: 'Invalid JSON payload',
+            message: parseError.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        if (!pausePayload || typeof pausePayload !== 'object' || !pausePayload.project) {
+          console.error(`${logPrefix} Invalid pause payload structure`);
+          return new Response(JSON.stringify({
+            error: 'Invalid payload structure',
+            message: 'Payload must contain project and event information',
+            timestamp: new Date().toISOString()
+          }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        const projectId = pausePayload.project?.id || config.vercel.projectId;
+        const teamId = pausePayload.team?.id || config.vercel.teamId;
+        const finalAuthToken = isInternal ? config.vercel.authToken : authToken;
+
+        const logData = {
+          timestamp: new Date().toISOString(),
+          path: path,
+          isInternal: isInternal,
+          pauseEvent: pausePayload.event || 'UNKNOWN',
+          projectId: projectId.substring(0, 8) + '...',
+          teamId: teamId.substring(0, 8) + '...'
+        };
+
+        if (config.spendManagement.enabled && pausePayload.event === 'SPEND_LIMIT_REACHED') {
+          await handleSpendManagementWebhook(projectId, teamId, finalAuthToken, pausePayload, logData);
+        } else {
+          logData.message = 'Basic pause request processed';
+          await pauseProject(projectId, teamId, finalAuthToken, logData);
+        }
+
+        const responseTime = Date.now() - startTime;
+        logData.success = true;
+        logData.responseTime = responseTime + 'ms';
+
+        return new Response(JSON.stringify({
+          ...logData,
+          status: 'success'
+        }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Response-Time': responseTime + 'ms',
+            'X-Worker-Version': '2.1.0'
+          }
+        });
+
+      } catch (err) {
+        const responseTime = Date.now() - startTime;
+        console.error(`${logPrefix} Critical error during pause webhook:`, err.message, err.stack);
+
+        return new Response(JSON.stringify({
+          error: 'Internal server error',
+          message: err.message || 'Unknown error during webhook processing',
+          timestamp: new Date().toISOString(),
+          path: path,
+          responseTime: responseTime + 'ms'
+        }), {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Worker-Error': 'Internal Server Error'
+          }
+        });
+      }
     }
 
     return new Response('Not Found', { status: 404 });
